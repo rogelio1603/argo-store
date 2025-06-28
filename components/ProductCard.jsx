@@ -1,0 +1,67 @@
+"use client"
+
+import * as React from "react"
+import Image from "next/image"
+import { ShoppingCartIcon } from "lucide-react"
+
+export function ProductCard({ product }) {
+  const {
+    id,
+    name,
+    price,
+    originalPrice,
+    image,
+    isOnSale,
+    discount
+  } = product
+
+  return (
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
+      {/* Product Image */}
+      <div className="relative aspect-square overflow-hidden bg-gray-100">
+        {isOnSale && (
+          <div className="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 text-xs font-semibold rounded z-10">
+            OFERTA
+          </div>
+        )}
+        <Image
+          src={image}
+          alt={name}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+        />
+      </div>
+
+      {/* Product Info */}
+      <div className="p-3 sm:p-4">
+        <h3 className="text-sm sm:text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+          {name}
+        </h3>
+        
+        {/* Price */}
+        <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4">
+          <span className="text-lg sm:text-xl font-bold text-gray-900">
+            ${price}
+          </span>
+          {originalPrice && originalPrice > price && (
+            <>
+              <span className="text-xs sm:text-sm text-gray-500 line-through">
+                ${originalPrice}
+              </span>
+              <span className="text-xs sm:text-sm text-red-500 font-semibold">
+                -{discount}%
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Add to Cart Button */}
+        <button className="w-full bg-black text-white py-2 px-3 sm:px-4 rounded-md hover:bg-gray-800 transition-colors duration-300 flex items-center justify-center space-x-2 group/button text-xs sm:text-sm">
+          <ShoppingCartIcon className="h-3 w-3 sm:h-4 sm:w-4 group-hover/button:scale-110 transition-transform duration-200" />
+          <span>Agregar al Carrito</span>
+        </button>
+      </div>
+    </div>
+  )
+} 
