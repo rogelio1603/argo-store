@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { PhoneIcon, MailIcon, MapPinIcon, FacebookIcon, InstagramIcon } from "lucide-react"
 
 export function Footer() {
@@ -12,35 +13,44 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
           {/* Brand Section */}
           <div className="lg:col-span-2 text-center md:text-left">
-            <div className="flex items-center justify-center md:justify-start mb-4">
-              <div className="bg-red-500 text-white px-2 py-1 rounded text-sm font-bold">
-                ArgoStore
+            <div className="flex flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-4">
+              <div className="flex-shrink-0">
+                <Image
+                  src="/logo.avif"
+                  alt="ArgoStore Logo"
+                  width={140}
+                  height={70}
+                  className="object-contain"
+                  priority
+                />
               </div>
-            </div>
-            <p className="text-gray-300 mb-6 text-sm leading-relaxed max-w-md mx-auto md:mx-0">
-              Tu destino para la moda moderna y accesorios únicos. Calidad y estilo en cada producto.
-            </p>
-            
-            {/* Contact Info */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-center md:justify-start space-x-2 text-sm text-gray-300">
-                <PhoneIcon className="h-4 w-4" />
-                <span>+52 33 3024 3550</span>
-              </div>
-              <div className="flex items-center justify-center md:justify-start space-x-2 text-sm text-gray-300">
-                <MailIcon className="h-4 w-4" />
-                <span>argo@gmail.com</span>
-              </div>
-              <div className="flex items-center justify-center md:justify-start space-x-2 text-sm text-gray-300">
-                <MapPinIcon className="h-4 w-4" />
-                <span>Guadalajara, Jalisco</span>
+              <div className="flex-1">
+                <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                  Tu destino para la moda moderna y accesorios únicos. Calidad y estilo en cada producto.
+                </p>
+                
+                {/* Contact Info */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center md:justify-start space-x-2 text-sm text-gray-300">
+                    <PhoneIcon className="h-4 w-4" />
+                    <span>+52 33 3074 3550</span>
+                  </div>
+                  <div className="flex items-center justify-center md:justify-start space-x-2 text-sm text-gray-300">
+                    <MailIcon className="h-4 w-4" />
+                    <span>argo@gmail.com</span>
+                  </div>
+                  <div className="flex items-center justify-center md:justify-start space-x-2 text-sm text-gray-300">
+                    <MapPinIcon className="h-4 w-4" />
+                    <span>Guadalajara, Jalisco</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Tienda Section */}
           <div className="text-center md:text-left">
-            <h3 className="text-white font-semibold mb-4 text-sm">Tienda</h3>
+            <h3 className="text-white font-semibold mb-4 text-md">Tienda</h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/ropa" className="text-gray-300 hover:text-white text-sm transition-colors duration-200">
@@ -67,7 +77,7 @@ export function Footer() {
 
           {/* Empresa Section */}
           <div className="text-center md:text-left">
-            <h3 className="text-white font-semibold mb-4 text-sm">Empresa</h3>
+            <h3 className="text-white font-semibold mb-4 text-md">Empresa</h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/sobre-nosotros" className="text-gray-300 hover:text-white text-sm transition-colors duration-200">
@@ -79,12 +89,17 @@ export function Footer() {
                   Contacto
                 </Link>
               </li>
+              <li>
+                <Link href="/aviso-de-privacidad" className="text-gray-300 hover:text-white text-sm transition-colors duration-200">
+                  Aviso de Privacidad
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* Soporte Section */}
           <div className="text-center md:text-left">
-            <h3 className="text-white font-semibold mb-4 text-sm">Soporte</h3>
+            <h3 className="text-white font-semibold mb-4 text-md">Soporte</h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/envios" className="text-gray-300 hover:text-white text-sm transition-colors duration-200">
@@ -111,34 +126,33 @@ export function Footer() {
             {/* Social Media */}
             <div className="flex items-center justify-center space-x-4 order-1 md:order-1">
               <Link 
-                href="https://facebook.com" 
+                href="https://www.facebook.com/argo.shop.gdl" 
                 className="text-gray-400 hover:text-white transition-colors duration-200"
                 aria-label="Facebook"
               >
-                <FacebookIcon className="h-5 w-5" />
+                <FacebookIcon className="h-5 w-5" aria-label="Facebook" role="img" />
               </Link>
               <Link 
-                href="https://instagram.com" 
+                href="https://www.instagram.com/argo.shop3/" 
                 className="text-gray-400 hover:text-white transition-colors duration-200"
                 aria-label="Instagram"
               >
-                <InstagramIcon className="h-5 w-5" />
+                <InstagramIcon className="h-5 w-5" aria-label="Instagram" role="img" />
               </Link>
-            </div>
-
-            {/* Legal Links */}
-            <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-6 text-sm text-gray-400 order-3 md:order-2">
-              <Link href="/aviso-de-privacidad" className="hover:text-white transition-colors duration-200">
-                Aviso de Privacidad
-              </Link>
-              <Link href="/politica-de-devoluciones" className="hover:text-white transition-colors duration-200">
-                Política de Devoluciones
+              <Link 
+                href="https://www.tiktok.com/@argo_shop" 
+                className="text-gray-400 hover:text-white transition-colors duration-200"
+                aria-label="TikTok"
+              >
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+                </svg>
               </Link>
             </div>
 
             {/* Copyright */}
             <div className="text-sm text-gray-400 order-2 md:order-3">
-              © 2025 ArgoShop. Todos los derechos reservados.
+              © {new Date().getFullYear()} ArgoShop. Todos los derechos reservados.
             </div>
           </div>
         </div>
