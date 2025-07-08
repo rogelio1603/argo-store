@@ -6,8 +6,11 @@ import { ProductCard } from "./ProductCard"
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver"
 import { fetchProducts } from "@/lib/api"
 import { LoaderIcon } from "lucide-react"
+import { useCategory } from "./CategoryContext"
 
 export function ProductsSection() {
+  const { selectedCategory, selectedSubcategory, getCurrentConfig } = useCategory()
+  const config = getCurrentConfig()
   const {
     data,
     fetchNextPage,
@@ -17,8 +20,8 @@ export function ProductsSection() {
     isError,
     error
   } = useInfiniteQuery({
-    queryKey: ['products'],
-    queryFn: ({ pageParam = 1 }) => fetchProducts({ pageParam }),
+    queryKey: ['products', selectedCategory, selectedSubcategory],
+    queryFn: ({ pageParam = 1 }) => fetchProducts({ pageParam, category: selectedCategory, subcategory: selectedSubcategory }),
     getNextPageParam: (lastPage) => {
       const { page, pageCount } = lastPage.meta.pagination
       return page < pageCount ? page + 1 : undefined
@@ -47,22 +50,22 @@ export function ProductsSection() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
-              Productos Destacados
+              {config.sectionTitle}
             </h2>
             <p className="text-sm sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              Descubre nuestra selección de productos más populares y las últimas tendencias en moda urbana
+              {config.sectionSubtitle}
             </p>
           </div>
           
           {/* Loading skeleton */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 auto-rows-fr">
             {Array.from({ length: 8 }).map((_, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
+              <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse h-full flex flex-col">
                 <div className="aspect-square bg-gray-200"></div>
-                <div className="p-3 sm:p-4">
+                <div className="p-3 sm:p-4 flex flex-col flex-grow">
                   <div className="h-4 bg-gray-200 rounded mb-2"></div>
                   <div className="h-3 bg-gray-200 rounded mb-3 w-2/3"></div>
-                  <div className="h-8 bg-gray-200 rounded"></div>
+                  <div className="h-8 bg-gray-200 rounded mt-auto"></div>
                 </div>
               </div>
             ))}
@@ -101,15 +104,15 @@ export function ProductsSection() {
         {/* Section Header */}
         <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
-            Productos Destacados
+            {config.sectionTitle}
           </h2>
           <p className="text-sm sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Descubre nuestra selección de productos más populares y las últimas tendencias en moda urbana
+            {config.sectionSubtitle}
           </p>
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 auto-rows-fr">
           {allProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
