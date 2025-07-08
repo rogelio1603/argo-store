@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { motion } from "framer-motion"
+import { motion } from "motion"
 import { useQuery } from "@tanstack/react-query"
 import { fetchTestimonials } from "@/lib/api"
 

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { motion } from "framer-motion"
+import { motion } from "motion"
 import { MapPinIcon, ClockIcon, PhoneIcon, MailIcon, UsersIcon } from "lucide-react"
 
 export function LocationSection() {

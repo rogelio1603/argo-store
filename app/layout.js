@@ -11,7 +11,7 @@ export default function RootLayout({ children }) {
     <html lang="es">
       <body className="antialiased">
         <QueryProvider>
-        {children}
+          {children}
         </QueryProvider>
       </body>
     </html>

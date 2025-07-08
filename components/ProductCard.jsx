@@ -3,6 +3,7 @@
 import * as React from "react"
 import Image from "next/image"
 import { ShoppingCartIcon } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 export function ProductCard({ product }) {
   const {
@@ -16,7 +17,7 @@ export function ProductCard({ product }) {
   } = product
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group h-full flex flex-col">
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-100">
         {isOnSale && (
@@ -34,13 +35,23 @@ export function ProductCard({ product }) {
       </div>
 
       {/* Product Info */}
-      <div className="p-3 sm:p-4">
-        <h3 className="text-sm sm:text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-          {name}
-        </h3>
+      <div className="p-3 sm:p-4 flex flex-col flex-grow">
+        {/* Title with tooltip */}
+        <div className="mb-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <h3 className="text-sm sm:text-lg font-semibold text-gray-900 line-clamp-2 cursor-default">
+                {name}
+              </h3>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs">
+              <p>{name}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
         
         {/* Price */}
-        <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4">
+        <div className="flex items-center space-x-1 sm:space-x-2 mb-3 sm:mb-4 flex-grow">
           <span className="text-lg sm:text-xl font-bold text-gray-900">
             ${price}
           </span>
@@ -57,7 +68,7 @@ export function ProductCard({ product }) {
         </div>
 
         {/* Add to Cart Button */}
-        <button className="w-full bg-black text-white py-2 px-3 sm:px-4 rounded-md hover:bg-gray-800 transition-colors duration-300 flex items-center justify-center space-x-2 group/button text-xs sm:text-sm">
+        <button className="w-full bg-black text-white py-2 px-3 sm:px-4 rounded-md hover:bg-red-600 transition-colors duration-300 flex items-center justify-center space-x-2 group/button text-xs sm:text-sm mt-auto cursor-pointer">
           <ShoppingCartIcon className="h-3 w-3 sm:h-4 sm:w-4 group-hover/button:scale-110 transition-transform duration-200" />
           <span>Agregar al Carrito</span>
         </button>
