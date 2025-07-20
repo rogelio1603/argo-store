@@ -2,9 +2,9 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { motion } from "motion"
+import { motion } from "framer-motion"
 import { useQuery } from "@tanstack/react-query"
-import { fetchTestimonials } from "@/lib/api"
+import { fetchTestimonials } from "@/lib/testimonials"
 
 export function TestimonialsSection() {
   const {

@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { motion } from "motion"
 import { MapPinIcon, ClockIcon, PhoneIcon, MailIcon, UsersIcon } from "lucide-react"
+import { motion } from "framer-motion"
 
 export function LocationSection() {
   const [mapLoaded, setMapLoaded] = React.useState(false)

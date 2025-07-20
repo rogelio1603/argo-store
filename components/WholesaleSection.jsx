@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { motion } from "motion"
+import { motion } from "framer-motion"
 import { PercentIcon, PackageIcon, TruckIcon, HeadphonesIcon, CreditCardIcon, StarIcon, PhoneIcon, MailIcon, ClockIcon } from "lucide-react"
 
 const benefits = [
