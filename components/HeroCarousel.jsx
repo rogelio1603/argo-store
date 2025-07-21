@@ -144,7 +144,16 @@ export function HeroCarousel() {
             {config.subtitle}
           </p>
           <button 
-            className={`bg-${config.color}-500 hover:bg-${config.color}-600 text-white font-semibold py-3 sm:py-4 px-6 sm:px-8 rounded-lg text-sm sm:text-lg transition-colors duration-300 transform hover:scale-105`}
+            onClick={() => {
+              const productosSection = document.getElementById('productos-destacados');
+              if (productosSection) {
+                productosSection.scrollIntoView({ 
+                  behavior: 'smooth',
+                  block: 'start'
+                });
+              }
+            }}
+            className={`bg-${config.color}-500 hover:bg-${config.color}-600 text-white font-semibold py-3 sm:py-4 px-6 sm:px-8 rounded-lg text-sm sm:text-lg transition-colors duration-300 transform hover:scale-105 cursor-pointer`}
             style={{
               backgroundColor: config.color === 'red' ? '#ef4444' : 
                               config.color === 'orange' ? '#f97316' : 

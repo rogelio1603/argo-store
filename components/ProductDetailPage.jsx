@@ -11,6 +11,7 @@ import { detectProductCategory, detectProductSubcategory, getCategoryDisplayName
 import { ProductCard } from "@/components/ProductCard"
 import { fetchProducts } from "@/lib/products"
 import { SizeGuideDialog } from "@/components/SizeGuideDialog"
+import useCartStore from "@/lib/cart-store"
 
 const COLOR_CLASSES = {
   Negro: { bg: 'bg-black', border: 'border-gray-300' },
@@ -36,6 +37,9 @@ export function ProductDetailPage({ product }) {
   const [isZoomed, setIsZoomed] = useState(false)
   const [relatedProducts, setRelatedProducts] = useState([])
   const [loadingRelated, setLoadingRelated] = useState(false)
+  
+  // Cart store
+  const { addItem } = useCartStore()
 
   // Extract unique colors from stock data
   const getAvailableColors = () => {
@@ -153,6 +157,26 @@ export function ProductDetailPage({ product }) {
 
   // Get total stock for current selection
   const currentStock = selectedColor && selectedSize ? getStockForSelection(selectedColor, selectedSize) : 0
+
+  // Handle add to cart
+  const handleAddToCart = () => {
+    if (!selectedColor || !selectedSize || currentStock === 0) return
+    
+    addItem(product, selectedColor, selectedSize, quantity)
+    
+    // Optional: Show success message or reset quantity
+    setQuantity(1)
+  }
+
+  // Handle buy now (same as add to cart for now, but could redirect to checkout)
+  const handleBuyNow = () => {
+    if (!selectedColor || !selectedSize || currentStock === 0) return
+    
+    addItem(product, selectedColor, selectedSize, quantity)
+    
+    // Could redirect to checkout page here
+    // router.push('/checkout')
+  }
   
   // Use product images or fallback to main image
   const images = product.images?.length > 0 ? product.images : [{ url: product.image, alternativeText: product.name }]
@@ -498,6 +522,7 @@ export function ProductDetailPage({ product }) {
             {/* Action Buttons */}
             <div className="space-y-2 sm:space-y-3">
               <button 
+                onClick={handleBuyNow}
                 disabled={currentStock === 0 || !selectedColor || !selectedSize}
                 className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-md transition-colors font-semibold flex items-center justify-center space-x-2 text-sm sm:text-base ${
                   currentStock === 0 || !selectedColor || !selectedSize
@@ -516,6 +541,7 @@ export function ProductDetailPage({ product }) {
               </button>
               
               <button 
+                onClick={handleAddToCart}
                 disabled={currentStock === 0 || !selectedColor || !selectedSize}
                 className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-md transition-colors font-semibold flex items-center justify-center space-x-2 text-sm sm:text-base ${
                   currentStock === 0 || !selectedColor || !selectedSize
