@@ -58,6 +58,7 @@ export async function ProductsSection() {
   try {
     // Fetch initial data on the server
     const initialData = await fetchProductsServer({ page: 1, pageSize: 8 })
+    console.log(initialData)
     
     return (
       <section className="py-12 sm:py-16 bg-gray-50">
