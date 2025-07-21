@@ -34,9 +34,11 @@ export function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="bg-red-500 text-white px-2 py-1 rounded text-sm font-bold">
-                ArgoStore
-              </div>
+              <img
+                src="/logo.avif"
+                alt="ArgoStore"
+                className="h-13 w-auto"
+              />
             </Link>
           </div>
 

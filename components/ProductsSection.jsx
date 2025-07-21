@@ -5,7 +5,7 @@ import { ReloadButton } from "./ReloadButton"
 // Loading skeleton component
 function ProductsSkeleton() {
   return (
-    <section className="py-12 sm:py-16 bg-gray-50">
+    <section id="productos-destacados" className="py-12 sm:py-16 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
@@ -37,7 +37,7 @@ function ProductsSkeleton() {
 // Error component
 function ProductsError({ error }) {
   return (
-    <section className="py-12 sm:py-16 bg-gray-50">
+    <section id="productos-destacados" className="py-12 sm:py-16 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -61,7 +61,7 @@ export async function ProductsSection() {
     console.log(initialData)
     
     return (
-      <section className="py-12 sm:py-16 bg-gray-50">
+      <section id="productos-destacados" className="py-12 sm:py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
           <div className="text-center mb-8 sm:mb-12">
