@@ -12,7 +12,7 @@ import { ProductCard } from "@/components/ProductCard"
 import { fetchProducts } from "@/lib/products"
 import { SizeGuideDialog } from "@/components/SizeGuideDialog"
 
-const COLORS = {
+const COLOR_CLASSES = {
   Negro: { bg: 'bg-black', border: 'border-gray-300' },
   Blanco: { bg: 'bg-white', border: 'border-gray-300' },
   Rojo: { bg: 'bg-red-500', border: 'border-red-300' },
@@ -20,7 +20,10 @@ const COLORS = {
   Verde: { bg: 'bg-green-500', border: 'border-green-300' },
   Gris: { bg: 'bg-gray-500', border: 'border-gray-300' },
   Rosa: { bg: 'bg-pink-500', border: 'border-pink-300' },
-  Amarillo: { bg: 'bg-yellow-500', border: 'border-yellow-300' }
+  Amarillo: { bg: 'bg-yellow-500', border: 'border-yellow-300' },
+  Beige: { bg: 'bg-amber-200', border: 'border-amber-300' },
+  Naranja: { bg: 'bg-orange-500', border: 'border-orange-300' },
+  Morado: { bg: 'bg-purple-500', border: 'border-purple-300' }
 }
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL']
@@ -33,9 +36,134 @@ export function ProductDetailPage({ product }) {
   const [isZoomed, setIsZoomed] = useState(false)
   const [relatedProducts, setRelatedProducts] = useState([])
   const [loadingRelated, setLoadingRelated] = useState(false)
+
+  // Extract unique colors from stock data
+  const getAvailableColors = () => {
+    if (!product.stock_por_color_talla || !Array.isArray(product.stock_por_color_talla)) {
+      return []
+    }
+
+    const colorsMap = new Map()
+    
+    product.stock_por_color_talla.forEach(stockItem => {
+      // Priority: colores_comunes over color hex
+      const colorName = stockItem.colores_comunes || stockItem.color
+      
+      if (colorName && !colorsMap.has(colorName)) {
+        const colorData = {
+          name: stockItem.colores_comunes || colorName,
+          hex: stockItem.color,
+          isCommonColor: Boolean(stockItem.colores_comunes),
+          id: stockItem.id
+        }
+        colorsMap.set(colorName, colorData)
+      }
+    })
+    
+    return Array.from(colorsMap.values())
+  }
+
+  // Get color style based on whether it's a common color or hex
+  const getColorStyle = (colorData) => {
+    if (colorData.isCommonColor && COLOR_CLASSES[colorData.name]) {
+      return COLOR_CLASSES[colorData.name]
+    }
+    
+    // For hex colors or unknown common colors, use custom style
+    return {
+      bg: '',
+      border: 'border-gray-300',
+      customStyle: { backgroundColor: colorData.hex || colorData.name }
+    }
+  }
+
+  const availableColors = getAvailableColors()
+
+  // Extract unique sizes from stock data
+  const getAvailableSizes = () => {
+    if (!product.stock_por_color_talla || !Array.isArray(product.stock_por_color_talla)) {
+      return SIZES // fallback to default sizes
+    }
+
+    const sizesSet = new Set()
+    
+    product.stock_por_color_talla.forEach(stockItem => {
+      if (stockItem.talla) {
+        sizesSet.add(stockItem.talla)
+      }
+    })
+    
+    // Convert to array and sort by predefined order
+    const availableSizes = Array.from(sizesSet)
+    return SIZES.filter(size => availableSizes.includes(size))
+      .concat(availableSizes.filter(size => !SIZES.includes(size)))
+  }
+
+  const availableSizes = getAvailableSizes()
+
+  // Get stock for specific color and size combination
+  const getStockForSelection = (colorName, sizeName) => {
+    if (!product.stock_por_color_talla || !Array.isArray(product.stock_por_color_talla)) {
+      return 0
+    }
+
+    const stockItem = product.stock_por_color_talla.find(item => {
+      const itemColorName = item.colores_comunes || item.color
+      return itemColorName === colorName && item.talla === sizeName
+    })
+
+    return stockItem ? stockItem.stock || 0 : 0
+  }
+
+  // Check if a size is available for selected color
+  const isSizeAvailable = (sizeName) => {
+    if (!selectedColor) return true
+    return getStockForSelection(selectedColor, sizeName) > 0
+  }
+
+  // Get available sizes for selected color
+  const getAvailableSizesForColor = (colorName) => {
+    if (!colorName) return availableSizes
+    return availableSizes.filter(size => getStockForSelection(colorName, size) > 0)
+  }
+
+  // Auto-select first available size when color changes
+  const handleColorSelection = (colorName) => {
+    setSelectedColor(colorName)
+    const availableSizesForColor = getAvailableSizesForColor(colorName)
+    if (availableSizesForColor.length > 0) {
+      setSelectedSize(availableSizesForColor[0])
+    } else {
+      setSelectedSize(null)
+    }
+  }
+
+  // Get display name for selected color
+  const getColorDisplayName = (colorName) => {
+    if (!colorName) return 'Selecciona un color'
+    
+    const colorData = availableColors.find(c => c.name === colorName)
+    if (colorData && colorData.isCommonColor) {
+      return colorData.name
+    }
+    
+    // For hex colors, don't show any text, just return empty
+    return ''
+  }
+
+  // Get total stock for current selection
+  const currentStock = selectedColor && selectedSize ? getStockForSelection(selectedColor, selectedSize) : 0
   
   // Use product images or fallback to main image
   const images = product.images?.length > 0 ? product.images : [{ url: product.image, alternativeText: product.name }]
+
+  // Auto-select first available color and size on component mount
+  useEffect(() => {
+    if (availableColors.length > 0 && !selectedColor) {
+      const firstColor = availableColors[0].name
+      handleColorSelection(firstColor)
+    }
+  }, [availableColors.length, selectedColor])
   
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length)
@@ -45,7 +173,10 @@ export function ProductDetailPage({ product }) {
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
   }
   
-  const increaseQuantity = () => setQuantity(prev => prev + 1)
+  const increaseQuantity = () => {
+    if (currentStock === 0 || quantity >= currentStock) return
+    setQuantity(prev => prev + 1)
+  }
   const decreaseQuantity = () => setQuantity(prev => Math.max(1, prev - 1))
 
   // Generate breadcrumb based on intelligent product categorization
@@ -262,25 +393,35 @@ export function ProductDetailPage({ product }) {
             )}
 
             {/* Color Selection */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-900">Color: {selectedColor || 'Negro'}</h3>
+            {availableColors.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-900">
+                    {getColorDisplayName(selectedColor) ? `Color: ${getColorDisplayName(selectedColor)}` : 'Color:'}
+                  </h3>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {availableColors.map((colorData) => {
+                    const colorStyle = getColorStyle(colorData)
+                    const isSelected = selectedColor === colorData.name
+                    
+                    return (
+                      <button
+                        key={colorData.name}
+                        onClick={() => handleColorSelection(colorData.name)}
+                        className={`w-8 h-8 rounded-full border-2 ${colorStyle.bg} ${
+                          isSelected
+                            ? 'ring-2 ring-red-500 ring-offset-2'
+                            : colorStyle.border
+                        }`}
+                        style={colorStyle.customStyle}
+                        title={colorData.isCommonColor ? colorData.name : ''}
+                      />
+                    )
+                  })}
+                </div>
               </div>
-              <div className="flex space-x-3">
-                {Object.entries(COLORS).map(([colorName, colorClasses]) => (
-                  <button
-                    key={colorName}
-                    onClick={() => setSelectedColor(colorName)}
-                    className={`w-8 h-8 rounded-full border-2 ${colorClasses.bg} ${
-                      selectedColor === colorName || (!selectedColor && colorName === 'Negro')
-                        ? 'ring-2 ring-red-500 ring-offset-2'
-                        : colorClasses.border
-                    }`}
-                    title={colorName}
-                  />
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Size Selection */}
             <div>
@@ -289,25 +430,33 @@ export function ProductDetailPage({ product }) {
                   Talla: {selectedSize ? selectedSize : 'Selecciona una talla'}
                 </h3>
                 <SizeGuideDialog category={getSizeGuideCategory()}>
-                  <button className="text-xs sm:text-sm text-red-500 hover:text-red-600 underline">
+                  <button className="text-xs sm:text-sm text-red-500 hover:text-red-600 underline cursor-pointer">
                     Guía de tallas
                   </button>
                 </SizeGuideDialog>
               </div>
               <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-                {SIZES.map((size) => (
-                                      <button
+                {availableSizes.map((size) => {
+                  const isAvailable = isSizeAvailable(size)
+                  const isSelected = selectedSize === size
+                  
+                  return (
+                    <button
                       key={size}
-                      onClick={() => setSelectedSize(size)}
+                      onClick={() => isAvailable && setSelectedSize(size)}
+                      disabled={!isAvailable}
                       className={`py-2 sm:py-3 px-2 sm:px-4 border rounded-md text-xs sm:text-sm font-medium transition-colors ${
-                        selectedSize === size
+                        isSelected
                           ? 'border-red-500 bg-red-50 text-red-700'
-                          : 'border-gray-300 hover:border-gray-400'
+                          : isAvailable
+                          ? 'border-gray-300 hover:border-gray-400'
+                          : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
                       }`}
                     >
-                    {size}
-                  </button>
-                ))}
+                      {size}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
@@ -325,24 +474,64 @@ export function ProductDetailPage({ product }) {
                   <span className="px-4 py-2 min-w-[3rem] text-center">{quantity}</span>
                   <button
                     onClick={increaseQuantity}
-                    className="p-2 hover:bg-gray-100 transition-colors"
+                    disabled={currentStock === 0 || quantity >= currentStock}
+                    className={`p-2 transition-colors ${
+                      currentStock === 0 || quantity >= currentStock
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'hover:bg-gray-100'
+                    }`}
                   >
                     +
                   </button>
                 </div>
-                <span className="text-sm text-green-600">Stock disponible</span>
+                <span className={`text-sm ${currentStock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {selectedColor && selectedSize 
+                    ? currentStock > 0 
+                      ? `${currentStock} en stock`
+                      : 'Sin stock'
+                    : 'Selecciona color y talla'
+                  }
+                </span>
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="space-y-2 sm:space-y-3">
-              <button className="w-full bg-red-500 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-md hover:bg-red-600 transition-colors font-semibold flex items-center justify-center space-x-2 text-sm sm:text-base">
-                <span>Comprar Ahora</span>
+              <button 
+                disabled={currentStock === 0 || !selectedColor || !selectedSize}
+                className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-md transition-colors font-semibold flex items-center justify-center space-x-2 text-sm sm:text-base ${
+                  currentStock === 0 || !selectedColor || !selectedSize
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : 'bg-red-500 text-white hover:bg-red-600'
+                }`}
+              >
+                <span>
+                  {!selectedColor || !selectedSize 
+                    ? 'Selecciona color y talla' 
+                    : currentStock === 0 
+                    ? 'Sin stock' 
+                    : 'Comprar Ahora'
+                  }
+                </span>
               </button>
               
-              <button className="w-full bg-black text-white py-3 sm:py-4 px-4 sm:px-6 rounded-md hover:bg-gray-800 transition-colors font-semibold flex items-center justify-center space-x-2 text-sm sm:text-base">
+              <button 
+                disabled={currentStock === 0 || !selectedColor || !selectedSize}
+                className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-md transition-colors font-semibold flex items-center justify-center space-x-2 text-sm sm:text-base ${
+                  currentStock === 0 || !selectedColor || !selectedSize
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : 'bg-black text-white hover:bg-gray-800'
+                }`}
+              >
                 <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>Agregar al Carrito</span>
+                <span>
+                  {!selectedColor || !selectedSize 
+                    ? 'Selecciona opciones' 
+                    : currentStock === 0 
+                    ? 'Sin stock' 
+                    : 'Agregar al Carrito'
+                  }
+                </span>
               </button>
             </div>
             {/* Additional benefits section */}
@@ -371,9 +560,6 @@ export function ProductDetailPage({ product }) {
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                   También te podría <span className="text-red-500">gustar</span>
                 </h2>
-                <p className="text-sm sm:text-base text-gray-600">
-                  Más productos de {subcategoryDisplayName.toLowerCase()}
-                </p>
               </div>
 
               {loadingRelated ? (
