@@ -418,29 +418,29 @@ export function ProductDetailPage({ product }) {
 
             {/* Color Selection */}
             {availableColors.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold text-gray-900">
                     {getColorDisplayName(selectedColor) ? `Color: ${getColorDisplayName(selectedColor)}` : 'Color:'}
                   </h3>
-                </div>
+              </div>
                 <div className="flex flex-wrap gap-3">
                   {availableColors.map((colorData) => {
                     const colorStyle = getColorStyle(colorData)
                     const isSelected = selectedColor === colorData.name
                     
                     return (
-                      <button
+                  <button
                         key={colorData.name}
                         onClick={() => handleColorSelection(colorData.name)}
                         className={`w-8 h-8 rounded-full border-2 ${colorStyle.bg} ${
                           isSelected
-                            ? 'ring-2 ring-red-500 ring-offset-2'
+                        ? 'ring-2 ring-red-500 ring-offset-2'
                             : colorStyle.border
-                        }`}
+                    }`}
                         style={colorStyle.customStyle}
                         title={colorData.isCommonColor ? colorData.name : ''}
-                      />
+                  />
                     )
                   })}
                 </div>
@@ -465,7 +465,7 @@ export function ProductDetailPage({ product }) {
                   const isSelected = selectedSize === size
                   
                   return (
-                    <button
+                                      <button
                       key={size}
                       onClick={() => isAvailable && setSelectedSize(size)}
                       disabled={!isAvailable}
@@ -477,8 +477,8 @@ export function ProductDetailPage({ product }) {
                           : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
                       }`}
                     >
-                      {size}
-                    </button>
+                    {size}
+                  </button>
                   )
                 })}
               </div>

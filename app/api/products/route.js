@@ -66,8 +66,17 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const page = searchParams.get('page') || '1'
     const pageSize = searchParams.get('pageSize') || '8'
+    const category = searchParams.get('category')
 
-    const response = await fetch(`${STRAPI_URL}/api/productos?pagination[page]=${page}&pagination[pageSize]=${pageSize}&pagination[withCount]=true&populate=*`, {
+    // Construir la URL base
+    let url = `${STRAPI_URL}/api/productos?pagination[page]=${page}&pagination[pageSize]=${pageSize}&pagination[withCount]=true&populate=*`
+    
+    // Agregar filtro por categoría si se especifica
+    if (category) {
+      url += `&filters[categoria][nombre][$eq]=${encodeURIComponent(category)}`
+    }
+
+    const response = await fetch(url, {
       headers: {
         'Authorization': `${process.env.NEXT_PUBLIC_STRAPI_TOKEN}`
       },

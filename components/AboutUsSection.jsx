@@ -7,6 +7,7 @@ import { HeartIcon, UsersIcon, TrophyIcon, TruckIcon, Heart, Award } from "lucid
 import { TestimonialsSection } from "./TestimonialsSection"
 import { WholesaleSection } from "./WholesaleSection"
 import { LocationSection } from "./LocationSection"
+import { fetchAboutUsServer } from "@/lib/about-us-server"
 
 const stats = [
   {
@@ -39,7 +40,8 @@ const stats = [
   }
 ]
 
-export function AboutUsSection() {
+// CLIENT COMPONENT
+export function AboutUsSection({ aboutUs }) {
   return (
     <>
       <section className="py-16 lg:py-24 bg-white">
@@ -72,7 +74,7 @@ export function AboutUsSection() {
                 
                 {/* Background image */}
                 <Image
-                  src="/api/placeholder/600/750"
+                  src={aboutUs?.argoImagen || "/api/placeholder/600/750"}
                   alt="Nuestra Historia - ArgoStore"
                   fill
                   className="object-cover"
@@ -162,15 +164,18 @@ export function AboutUsSection() {
           </div>
         </div>
       </section>
-      
       {/* Testimonials Section */}
-      <TestimonialsSection />
-      
+      <TestimonialsSection testimonios={aboutUs?.testimonios || []} />
       {/* Wholesale Section */}
       <WholesaleSection />
-      
       {/* Location Section */}
       <LocationSection />
     </>
   )
+}
+
+// SERVER COMPONENT
+export async function AboutUsSectionServer() {
+  const { data } = await fetchAboutUsServer()
+  return <AboutUsSection aboutUs={data} />
 } 

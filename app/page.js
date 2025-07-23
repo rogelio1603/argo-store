@@ -1,5 +1,5 @@
 import { Header } from "@/components/Header"
-import { HeroCarousel } from "@/components/HeroCarousel"
+import { HeroCarouselServer } from "@/components/HeroCarouselServer"
 import { ProductsSection } from "@/components/ProductsSection"
 import { Footer } from "@/components/Footer"
 import { CategoryProvider } from "@/components/CategoryContext"
@@ -10,8 +10,8 @@ export default function Home() {
       <div className="min-h-screen">
         <Header />
         <main>
-          <HeroCarousel />
-          <ProductsSection />
+          <HeroCarouselServer categorySlug="inicio" />
+          <ProductsSection category={null} />
         </main>
         <Footer />
       </div>

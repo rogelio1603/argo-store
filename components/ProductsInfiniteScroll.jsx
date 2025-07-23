@@ -7,7 +7,7 @@ import { useIntersectionObserver } from "@/hooks/useIntersectionObserver"
 import { fetchProducts } from "@/lib/products"
 import { LoaderIcon } from "lucide-react"
 
-export function ProductsInfiniteScroll({ initialData, initialMeta }) {
+export function ProductsInfiniteScroll({ initialData, initialMeta, category = null }) {
   const {
     data,
     fetchNextPage,
@@ -17,8 +17,8 @@ export function ProductsInfiniteScroll({ initialData, initialMeta }) {
     isError,
     error
   } = useInfiniteQuery({
-    queryKey: ['products'],
-    queryFn: ({ pageParam = 1 }) => fetchProducts({ pageParam }),
+    queryKey: ['products', category],
+    queryFn: ({ pageParam = 1 }) => fetchProducts({ pageParam, category }),
     getNextPageParam: (lastPage) => {
       const { page, pageCount } = lastPage.meta.pagination
       return page < pageCount ? page + 1 : undefined
