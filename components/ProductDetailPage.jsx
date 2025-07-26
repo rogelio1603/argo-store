@@ -29,7 +29,7 @@ const COLOR_CLASSES = {
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL']
 
-export function ProductDetailPage({ product }) {
+export function ProductDetailPage({ product, categories = [] }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [selectedColor, setSelectedColor] = useState(null)
   const [selectedSize, setSelectedSize] = useState(null)
@@ -284,7 +284,7 @@ export function ProductDetailPage({ product }) {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      <Header categories={categories} />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Breadcrumb */}

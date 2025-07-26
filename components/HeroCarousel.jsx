@@ -4,11 +4,40 @@ import { useEffect, useState } from "react"
 import { useCategory } from "./CategoryContext"
 import { Skeleton } from "@/components/ui/skeleton"
 
-export function HeroCarousel({ categoriesData }) {
+export function HeroCarousel({ categoriesData, categoryInfo = null }) {
   const [currentSlide, setCurrentSlide] = useState(0)
   const { selectedCategory, getCurrentConfig, isConfigLoaded } = useCategory()
   
-  const config = getCurrentConfig()
+  // Use dynamic category info if available, otherwise fall back to config
+  const getDynamicConfig = () => {
+    if (categoryInfo) {
+      const dynamicConfig = {
+        title: categoryInfo.cabecera_seccion || categoryInfo.nombre || "Moda que Define tu Estilo",
+        subtitle: categoryInfo.descripcion_seccion || categoryInfo.descripcion || "Descubre nuestra colección exclusiva",
+        buttonText: "Explorar Colección",
+        color: getColorFromCategory(categoryInfo.categoria_global || categoryInfo.nombre)
+      }
+      
+      return dynamicConfig
+    }
+    
+    return getCurrentConfig()
+  }
+  
+  // Generate consistent color based on category name
+  const getColorFromCategory = (categoryName) => {
+    if (!categoryName) return 'red'
+    
+    const colors = ['red', 'orange', 'blue', 'purple', 'green']
+    const hash = categoryName.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0)
+      return a & a
+    }, 0)
+    
+    return colors[Math.abs(hash) % colors.length]
+  }
+  
+  const config = getDynamicConfig()
   
   // Get hero slides from categories data
   const getHeroSlides = () => {
