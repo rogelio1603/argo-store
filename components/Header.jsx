@@ -92,24 +92,24 @@ export function Header({ categories = [] }) {
                         {isDrops ? `${categoriaGlobal} 🔥` : categoriaGlobal}
                       {/* </Link> */}
                     </NavigationMenuTrigger>
-                    <NavigationMenuContent>
+                <NavigationMenuContent>
                       <ul className={`grid gap-3 p-4 ${subcategories.length > 3 ? 'md:w-[500px] md:grid-cols-2 lg:w-[600px]' : 'w-[300px]'}`}>
                         {isDrops && subcategories.length > 0 && (
-                          <li className="row-span-3">
-                            <NavigationMenuLink asChild>
-                              <Link 
+                    <li className="row-span-3">
+                      <NavigationMenuLink asChild>
+                        <Link 
                                 href={basePath}
-                                className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-orange-50 to-orange-100 p-6 no-underline outline-none focus:shadow-md hover:bg-gradient-to-b hover:from-orange-100 hover:to-orange-200 transition-all"
-                              >
-                                <div className="mb-2 mt-4 text-lg font-medium text-orange-800">
-                                  Nuevos Lanzamientos
-                                </div>
-                                <p className="text-sm leading-tight text-orange-600">
-                                  Descubre las últimas tendencias en moda urbana
-                                </p>
-                              </Link>
-                            </NavigationMenuLink>
-                          </li>
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-orange-50 to-orange-100 p-6 no-underline outline-none focus:shadow-md hover:bg-gradient-to-b hover:from-orange-100 hover:to-orange-200 transition-all"
+                        >
+                          <div className="mb-2 mt-4 text-lg font-medium text-orange-800">
+                            Nuevos Lanzamientos
+                          </div>
+                          <p className="text-sm leading-tight text-orange-600">
+                            Descubre las últimas tendencias en moda urbana
+                          </p>
+                        </Link>
+                      </NavigationMenuLink>
+                    </li>
                         )}
                         {subcategories.map((subcategory) => (
                           <ListItem 
@@ -118,11 +118,11 @@ export function Header({ categories = [] }) {
                             title={subcategory.nombre}
                           >
                             {subcategory.descripcion_menu || `Descubre nuestra colección de ${subcategory.nombre.toLowerCase()}`}
-                          </ListItem>
+                    </ListItem>
                         ))}
-                      </ul>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
                 )
               })}
 
@@ -201,26 +201,26 @@ export function Header({ categories = [] }) {
                       
                       return (
                         <div key={categoriaGlobal} className="space-y-2">
-                          <Link
+                      <Link
                             href={basePath}
                             className={`flex items-center justify-between py-3 px-4 rounded-lg ${colorClasses.bg} ${colorClasses.hover} transition-colors`}
-                          >
+                      >
                             <span className={`font-medium ${colorClasses.text}`}>
                               {isDrops ? `${categoriaGlobal} 🔥` : categoriaGlobal}
                             </span>
-                          </Link>
-                          <div className="ml-4 space-y-2">
+                      </Link>
+                      <div className="ml-4 space-y-2">
                             {subcategories.map((subcategory) => (
-                              <Link 
+                      <Link
                                 key={subcategory.documentId}
                                 href={getSubcategoryHref(subcategory)} 
                                 className="block py-2 px-4 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded"
-                              >
+                      >
                                 {subcategory.nombre}
-                              </Link>
+                      </Link>
                             ))}
-                          </div>
-                        </div>
+                      </div>
+                    </div>
                       )
                     })}
 

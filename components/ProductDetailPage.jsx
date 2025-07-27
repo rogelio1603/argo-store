@@ -13,25 +13,13 @@ import { fetchProducts } from "@/lib/products"
 import { SizeGuideDialog } from "@/components/SizeGuideDialog"
 import useCartStore from "@/lib/cart-store"
 
-const COLOR_CLASSES = {
-  Negro: { bg: 'bg-black', border: 'border-gray-300' },
-  Blanco: { bg: 'bg-white', border: 'border-gray-300' },
-  Rojo: { bg: 'bg-red-500', border: 'border-red-300' },
-  Azul: { bg: 'bg-blue-500', border: 'border-blue-300' },
-  Verde: { bg: 'bg-green-500', border: 'border-green-300' },
-  Gris: { bg: 'bg-gray-500', border: 'border-gray-300' },
-  Rosa: { bg: 'bg-pink-500', border: 'border-pink-300' },
-  Amarillo: { bg: 'bg-yellow-500', border: 'border-yellow-300' },
-  Beige: { bg: 'bg-amber-200', border: 'border-amber-300' },
-  Naranja: { bg: 'bg-orange-500', border: 'border-orange-300' },
-  Morado: { bg: 'bg-purple-500', border: 'border-purple-300' }
-}
+// Removed COLOR_CLASSES since we're now using images instead of colors
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL']
 
 export function ProductDetailPage({ product, categories = [] }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [selectedColor, setSelectedColor] = useState(null)
+  const [selectedImage, setSelectedImage] = useState(null)
   const [selectedSize, setSelectedSize] = useState(null)
   const [quantity, setQuantity] = useState(1)
   const [isZoomed, setIsZoomed] = useState(false)
@@ -41,59 +29,80 @@ export function ProductDetailPage({ product, categories = [] }) {
   // Cart store
   const { addItem } = useCartStore()
 
-  // Extract unique colors from stock data
-  const getAvailableColors = () => {
-    if (!product.stock_por_color_talla || !Array.isArray(product.stock_por_color_talla)) {
-      return []
+  // Extract unique images from inventario data
+  const getAvailableImages = () => {
+    if (!product.inventario || !Array.isArray(product.inventario)) {
+      // Fallback to old structure for compatibility
+      if (!product.stock_por_color_talla || !Array.isArray(product.stock_por_color_talla)) {
+        return []
+      }
+      
+      const imagesMap = new Map()
+      product.stock_por_color_talla.forEach(stockItem => {
+        if (stockItem.imagenes && Array.isArray(stockItem.imagenes)) {
+          stockItem.imagenes.forEach(imagen => {
+            if (imagen && imagen.id && !imagesMap.has(imagen.id)) {
+              imagesMap.set(imagen.id, {
+                ...imagen,
+                stockItemId: stockItem.id,
+                stockPorTalla: [{ talla: stockItem.talla, stock: stockItem.stock }]
+              })
+            }
+          })
+        }
+      })
+      return Array.from(imagesMap.values())
     }
 
-    const colorsMap = new Map()
+    const imagesMap = new Map()
     
-    product.stock_por_color_talla.forEach(stockItem => {
-      // Priority: colores_comunes over color hex
-      const colorName = stockItem.colores_comunes || stockItem.color
-      
-      if (colorName && !colorsMap.has(colorName)) {
-        const colorData = {
-          name: stockItem.colores_comunes || colorName,
-          hex: stockItem.color,
-          isCommonColor: Boolean(stockItem.colores_comunes),
-          id: stockItem.id
-        }
-        colorsMap.set(colorName, colorData)
+    product.inventario.forEach(inventarioItem => {
+      if (inventarioItem.imagenes && Array.isArray(inventarioItem.imagenes)) {
+        inventarioItem.imagenes.forEach(imagen => {
+          if (imagen && imagen.id && !imagesMap.has(imagen.id)) {
+            imagesMap.set(imagen.id, {
+              ...imagen,
+              inventarioItemId: inventarioItem.id,
+              stockPorTalla: inventarioItem.stock_por_talla || []
+            })
+          }
+        })
       }
     })
     
-    return Array.from(colorsMap.values())
+    return Array.from(imagesMap.values())
   }
 
-  // Get color style based on whether it's a common color or hex
-  const getColorStyle = (colorData) => {
-    if (colorData.isCommonColor && COLOR_CLASSES[colorData.name]) {
-      return COLOR_CLASSES[colorData.name]
-    }
-    
-    // For hex colors or unknown common colors, use custom style
-    return {
-      bg: '',
-      border: 'border-gray-300',
-      customStyle: { backgroundColor: colorData.hex || colorData.name }
-    }
-  }
+  const availableImages = getAvailableImages()
 
-  const availableColors = getAvailableColors()
-
-  // Extract unique sizes from stock data
+  // Extract unique sizes from inventario data
   const getAvailableSizes = () => {
-    if (!product.stock_por_color_talla || !Array.isArray(product.stock_por_color_talla)) {
-      return SIZES // fallback to default sizes
+    if (!product.inventario || !Array.isArray(product.inventario)) {
+      // Fallback to old structure for compatibility
+      if (!product.stock_por_color_talla || !Array.isArray(product.stock_por_color_talla)) {
+        return SIZES // fallback to default sizes
+      }
+      
+      const sizesSet = new Set()
+      product.stock_por_color_talla.forEach(stockItem => {
+        if (stockItem.talla) {
+          sizesSet.add(stockItem.talla)
+        }
+      })
+      const availableSizes = Array.from(sizesSet)
+      return SIZES.filter(size => availableSizes.includes(size))
+        .concat(availableSizes.filter(size => !SIZES.includes(size)))
     }
 
     const sizesSet = new Set()
     
-    product.stock_por_color_talla.forEach(stockItem => {
-      if (stockItem.talla) {
-        sizesSet.add(stockItem.talla)
+    product.inventario.forEach(inventarioItem => {
+      if (inventarioItem.stock_por_talla && Array.isArray(inventarioItem.stock_por_talla)) {
+        inventarioItem.stock_por_talla.forEach(stockTalla => {
+          if (stockTalla.talla) {
+            sizesSet.add(stockTalla.talla)
+          }
+        })
       }
     })
     
@@ -105,64 +114,71 @@ export function ProductDetailPage({ product, categories = [] }) {
 
   const availableSizes = getAvailableSizes()
 
-  // Get stock for specific color and size combination
-  const getStockForSelection = (colorName, sizeName) => {
-    if (!product.stock_por_color_talla || !Array.isArray(product.stock_por_color_talla)) {
+  // Get stock for specific image and size combination
+  const getStockForSelection = (imageId, sizeName) => {
+    if (!product.inventario || !Array.isArray(product.inventario)) {
+      // Fallback to old structure for compatibility
+      if (!product.stock_por_color_talla || !Array.isArray(product.stock_por_color_talla)) {
+        return 0
+      }
+      
+      const stockItem = product.stock_por_color_talla.find(item => {
+        if (!item.imagenes || !Array.isArray(item.imagenes)) return false
+        const hasImage = item.imagenes.some(img => img.id === imageId)
+        return hasImage && item.talla === sizeName
+      })
+      
+      return stockItem ? stockItem.stock || 0 : 0
+    }
+
+    // Find the inventario item that contains the image
+    const inventarioItem = product.inventario.find(item => {
+      if (!item.imagenes || !Array.isArray(item.imagenes)) return false
+      return item.imagenes.some(img => img.id === imageId)
+    })
+
+    if (!inventarioItem || !inventarioItem.stock_por_talla) {
       return 0
     }
 
-    const stockItem = product.stock_por_color_talla.find(item => {
-      const itemColorName = item.colores_comunes || item.color
-      return itemColorName === colorName && item.talla === sizeName
-    })
-
-    return stockItem ? stockItem.stock || 0 : 0
+    // Find the stock for the specific size in this inventario item
+    const stockTalla = inventarioItem.stock_por_talla.find(st => st.talla === sizeName)
+    
+    return stockTalla ? stockTalla.stock || 0 : 0
   }
 
-  // Check if a size is available for selected color
+  // Check if a size is available for selected image
   const isSizeAvailable = (sizeName) => {
-    if (!selectedColor) return true
-    return getStockForSelection(selectedColor, sizeName) > 0
+    if (!selectedImage) return true
+    return getStockForSelection(selectedImage.id, sizeName) > 0
   }
 
-  // Get available sizes for selected color
-  const getAvailableSizesForColor = (colorName) => {
-    if (!colorName) return availableSizes
-    return availableSizes.filter(size => getStockForSelection(colorName, size) > 0)
+  // Get available sizes for selected image
+  const getAvailableSizesForImage = (imageId) => {
+    if (!imageId) return availableSizes
+    return availableSizes.filter(size => getStockForSelection(imageId, size) > 0)
   }
 
-  // Auto-select first available size when color changes
-  const handleColorSelection = (colorName) => {
-    setSelectedColor(colorName)
-    const availableSizesForColor = getAvailableSizesForColor(colorName)
-    if (availableSizesForColor.length > 0) {
-      setSelectedSize(availableSizesForColor[0])
+  // Auto-select first available size when image changes
+  const handleImageSelection = (imageData) => {
+    setSelectedImage(imageData)
+    setCurrentImageIndex(0) // Reset to first image view
+    const availableSizesForImage = getAvailableSizesForImage(imageData.id)
+    if (availableSizesForImage.length > 0) {
+      setSelectedSize(availableSizesForImage[0])
     } else {
       setSelectedSize(null)
     }
   }
 
-  // Get display name for selected color
-  const getColorDisplayName = (colorName) => {
-    if (!colorName) return 'Selecciona un color'
-    
-    const colorData = availableColors.find(c => c.name === colorName)
-    if (colorData && colorData.isCommonColor) {
-      return colorData.name
-    }
-    
-    // For hex colors, don't show any text, just return empty
-    return ''
-  }
-
   // Get total stock for current selection
-  const currentStock = selectedColor && selectedSize ? getStockForSelection(selectedColor, selectedSize) : 0
+  const currentStock = selectedImage && selectedSize ? getStockForSelection(selectedImage.id, selectedSize) : 0
 
   // Handle add to cart
   const handleAddToCart = () => {
-    if (!selectedColor || !selectedSize || currentStock === 0) return
+    if (!selectedImage || !selectedSize || currentStock === 0) return
     
-    addItem(product, selectedColor, selectedSize, quantity)
+    addItem(product, selectedImage, selectedSize, quantity)
     
     // Optional: Show success message or reset quantity
     setQuantity(1)
@@ -170,24 +186,81 @@ export function ProductDetailPage({ product, categories = [] }) {
 
   // Handle buy now (same as add to cart for now, but could redirect to checkout)
   const handleBuyNow = () => {
-    if (!selectedColor || !selectedSize || currentStock === 0) return
+    if (!selectedImage || !selectedSize || currentStock === 0) return
     
-    addItem(product, selectedColor, selectedSize, quantity)
+    addItem(product, selectedImage, selectedSize, quantity)
     
     // Could redirect to checkout page here
     // router.push('/checkout')
   }
   
-  // Use product images or fallback to main image
-  const images = product.images?.length > 0 ? product.images : [{ url: product.image, alternativeText: product.name }]
-
-  // Auto-select first available color and size on component mount
-  useEffect(() => {
-    if (availableColors.length > 0 && !selectedColor) {
-      const firstColor = availableColors[0].name
-      handleColorSelection(firstColor)
+  // Get all available images from inventario data for the main gallery
+  const getAllProductImages = () => {
+    const allImages = []
+    
+    // Add main product image first
+    if (product.image) {
+      allImages.push({ 
+        url: product.image, 
+        alternativeText: product.name 
+      })
     }
-  }, [availableColors.length, selectedColor])
+    
+    // Add all images from inventario
+    if (product.inventario && Array.isArray(product.inventario)) {
+      product.inventario.forEach(inventarioItem => {
+        if (inventarioItem.imagenes && Array.isArray(inventarioItem.imagenes)) {
+          inventarioItem.imagenes.forEach(imagen => {
+            // Avoid duplicates by checking URL
+            if (!allImages.some(img => img.url === imagen.url)) {
+              allImages.push({
+                url: imagen.url,
+                alternativeText: imagen.alternativeText || `${product.name} - Variant`
+              })
+            }
+          })
+        }
+      })
+    }
+    // Fallback to old structure for compatibility
+    else if (product.stock_por_color_talla && Array.isArray(product.stock_por_color_talla)) {
+      product.stock_por_color_talla.forEach(stockItem => {
+        if (stockItem.imagenes && Array.isArray(stockItem.imagenes)) {
+          stockItem.imagenes.forEach(imagen => {
+            // Avoid duplicates by checking URL
+            if (!allImages.some(img => img.url === imagen.url)) {
+              allImages.push({
+                url: imagen.url,
+                alternativeText: imagen.alternativeText || `${product.name} - ${stockItem.talla}`
+              })
+            }
+          })
+        }
+      })
+    }
+    
+    // Fallback to regular product images if no stock images
+    if (allImages.length === 0 && product.images?.length > 0) {
+      return product.images
+    }
+    
+    // Final fallback
+    if (allImages.length === 0) {
+      return [{ url: product.image || '/api/placeholder/400/400', alternativeText: product.name }]
+    }
+    
+    return allImages
+  }
+  
+  const images = getAllProductImages()
+
+  // Auto-select first available image and size on component mount
+  useEffect(() => {
+    if (availableImages.length > 0 && !selectedImage) {
+      const firstImage = availableImages[0]
+      handleImageSelection(firstImage)
+    }
+  }, [availableImages.length, selectedImage])
   
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length)
@@ -203,11 +276,33 @@ export function ProductDetailPage({ product, categories = [] }) {
   }
   const decreaseQuantity = () => setQuantity(prev => Math.max(1, prev - 1))
 
-  // Generate breadcrumb based on intelligent product categorization
-  const detectedCategory = detectProductCategory(product)
-  const detectedSubcategory = detectProductSubcategory(product)
-  const categoryDisplayName = getCategoryDisplayName(detectedCategory)
-  const subcategoryDisplayName = getSubcategoryDisplayName(detectedSubcategory)
+  // Generate breadcrumb based on product category information
+  const getBreadcrumbInfo = () => {
+    // Use Strapi category info if available
+    if (product.categoria_global && product.categoria_nombre) {
+      return {
+        categorySlug: product.categoria_global.toLowerCase().replace(/\s+/g, '-'),
+        categoryName: product.categoria_global,
+        subcategorySlug: product.categoria_slug || product.categoria_nombre.toLowerCase().replace(/\s+/g, '-'),
+        subcategoryName: product.categoria_nombre
+      }
+    }
+    
+    // Fallback to intelligent detection
+    const detectedCategory = detectProductCategory(product)
+    const detectedSubcategory = detectProductSubcategory(product)
+    const categoryDisplayName = getCategoryDisplayName(detectedCategory)
+    const subcategoryDisplayName = getSubcategoryDisplayName(detectedSubcategory)
+    
+    return {
+      categorySlug: detectedCategory,
+      categoryName: categoryDisplayName,
+      subcategorySlug: detectedSubcategory,
+      subcategoryName: subcategoryDisplayName
+    }
+  }
+  
+  const breadcrumbInfo = getBreadcrumbInfo()
   
   // Determine size guide category based on product
   const getSizeGuideCategory = () => {
@@ -215,11 +310,14 @@ export function ProductDetailPage({ product, categories = [] }) {
     const productDesc = product.description?.toLowerCase() || ''
     const searchText = `${productName} ${productDesc}`
     
-    // Check if it's calzado
-    if (detectedCategory === 'calzado' || 
-        searchText.includes('zapato') || searchText.includes('sneaker') || 
-        searchText.includes('bota') || searchText.includes('sandalia') ||
-        searchText.includes('zapatilla') || searchText.includes('tennis')) {
+    // Check if it's calzado - use breadcrumbInfo or search text
+    const isFootwear = breadcrumbInfo.categorySlug === 'calzado' || 
+                      breadcrumbInfo.categoryName.toLowerCase().includes('calzado') ||
+                      searchText.includes('zapato') || searchText.includes('sneaker') || 
+                      searchText.includes('bota') || searchText.includes('sandalia') ||
+                      searchText.includes('zapatilla') || searchText.includes('tennis')
+    
+    if (isFootwear) {
       return "calzado"
     }
     
@@ -243,8 +341,8 @@ export function ProductDetailPage({ product, categories = [] }) {
   
   const breadcrumbs = [
     { name: 'Inicio', href: '/' },
-    { name: categoryDisplayName, href: `/${detectedCategory}` },
-    { name: subcategoryDisplayName, href: `/${detectedCategory}/${detectedSubcategory}` },
+    { name: breadcrumbInfo.categoryName, href: `/${breadcrumbInfo.categorySlug}` },
+    { name: breadcrumbInfo.subcategoryName, href: `/${breadcrumbInfo.categorySlug}/${breadcrumbInfo.subcategorySlug}` },
     { name: product.name, href: '#' }
   ]
 
@@ -256,17 +354,22 @@ export function ProductDetailPage({ product, categories = [] }) {
       setLoadingRelated(true)
       try {
         // Fetch products from the same category/subcategory
-        const response = await fetchProducts({ pageParam: 1, pageSize: 4 })
+        const response = await fetchProducts({ pageParam: 1, pageSize: 16 })
         
         if (response?.data) {
           // Filter out the current product and products from the same category
           const filtered = response.data
             .filter(p => p.id !== product.id)
             .filter(p => {
+              // Use Strapi category info if available
+              if (product.categoria_global) {
+                return p.categoria_global === product.categoria_global
+              }
+              
+              // Fallback to intelligent detection
               const pCategory = detectProductCategory(p)
-              const pSubcategory = detectProductSubcategory(p)
-              // Prefer same subcategory, fallback to same category
-              return pSubcategory === detectedSubcategory || pCategory === detectedCategory
+              const currentCategory = detectProductCategory(product)
+              return pCategory === currentCategory
             })
             .slice(0, 4)
           
@@ -280,7 +383,7 @@ export function ProductDetailPage({ product, categories = [] }) {
     }
 
     loadRelatedProducts()
-  }, [product, detectedCategory, detectedSubcategory])
+  }, [product])
 
   return (
     <div className="min-h-screen bg-white">
@@ -416,31 +519,35 @@ export function ProductDetailPage({ product, categories = [] }) {
               </div>
             )}
 
-            {/* Color Selection */}
-            {availableColors.length > 0 && (
+            {/* Image Selection */}
+            {availableImages.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold text-gray-900">
-                    {getColorDisplayName(selectedColor) ? `Color: ${getColorDisplayName(selectedColor)}` : 'Color:'}
+                    Variantes:
                   </h3>
               </div>
                 <div className="flex flex-wrap gap-3">
-                  {availableColors.map((colorData) => {
-                    const colorStyle = getColorStyle(colorData)
-                    const isSelected = selectedColor === colorData.name
+                  {availableImages.map((imageData) => {
+                    const isSelected = selectedImage?.id === imageData.id
                     
                     return (
                   <button
-                        key={colorData.name}
-                        onClick={() => handleColorSelection(colorData.name)}
-                        className={`w-8 h-8 rounded-full border-2 ${colorStyle.bg} ${
+                        key={imageData.id}
+                        onClick={() => handleImageSelection(imageData)}
+                        className={`w-16 h-16 rounded-lg border-2 overflow-hidden ${
                           isSelected
-                        ? 'ring-2 ring-red-500 ring-offset-2'
-                            : colorStyle.border
+                        ? 'ring-2 ring-red-500 ring-offset-2 border-red-500'
+                            : 'border-gray-300 hover:border-gray-400'
                     }`}
-                        style={colorStyle.customStyle}
-                        title={colorData.isCommonColor ? colorData.name : ''}
-                  />
+                        title={`Talla ${imageData.talla} - ${imageData.stock} en stock`}
+                  >
+                    <img
+                      src={imageData.url}
+                      alt={imageData.alternativeText || `Talla ${imageData.talla}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
                     )
                   })}
                 </div>
@@ -509,11 +616,11 @@ export function ProductDetailPage({ product, categories = [] }) {
                   </button>
                 </div>
                 <span className={`text-sm ${currentStock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {selectedColor && selectedSize 
+                  {selectedImage && selectedSize 
                     ? currentStock > 0 
                       ? `${currentStock} en stock`
                       : 'Sin stock'
-                    : 'Selecciona color y talla'
+                    : 'Selecciona variante y talla'
                   }
                 </span>
               </div>
@@ -523,16 +630,16 @@ export function ProductDetailPage({ product, categories = [] }) {
             <div className="space-y-2 sm:space-y-3">
               <button 
                 onClick={handleBuyNow}
-                disabled={currentStock === 0 || !selectedColor || !selectedSize}
+                disabled={currentStock === 0 || !selectedImage || !selectedSize}
                 className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-md transition-colors font-semibold flex items-center justify-center space-x-2 text-sm sm:text-base ${
-                  currentStock === 0 || !selectedColor || !selectedSize
+                  currentStock === 0 || !selectedImage || !selectedSize
                     ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                     : 'bg-red-500 text-white hover:bg-red-600'
                 }`}
               >
                 <span>
-                  {!selectedColor || !selectedSize 
-                    ? 'Selecciona color y talla' 
+                  {!selectedImage || !selectedSize 
+                    ? 'Selecciona variante y talla' 
                     : currentStock === 0 
                     ? 'Sin stock' 
                     : 'Comprar Ahora'
@@ -542,16 +649,16 @@ export function ProductDetailPage({ product, categories = [] }) {
               
               <button 
                 onClick={handleAddToCart}
-                disabled={currentStock === 0 || !selectedColor || !selectedSize}
+                disabled={currentStock === 0 || !selectedImage || !selectedSize}
                 className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-md transition-colors font-semibold flex items-center justify-center space-x-2 text-sm sm:text-base ${
-                  currentStock === 0 || !selectedColor || !selectedSize
+                  currentStock === 0 || !selectedImage || !selectedSize
                     ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                     : 'bg-black text-white hover:bg-gray-800'
                 }`}
               >
                 <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span>
-                  {!selectedColor || !selectedSize 
+                  {!selectedImage || !selectedSize 
                     ? 'Selecciona opciones' 
                     : currentStock === 0 
                     ? 'Sin stock' 
@@ -579,29 +686,32 @@ export function ProductDetailPage({ product, categories = [] }) {
         </div>
 
         {/* Related Products Section */}
-        {relatedProducts.length > 0 && (
-          <section className="py-8 sm:py-12">
-            <div className="space-y-6 sm:space-y-8">
-              <div className="text-center">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-                  También te podría <span className="text-red-500">gustar</span>
-                </h2>
-              </div>
-
-              {loadingRelated ? (
-                <div className="flex justify-center items-center py-8 sm:py-12">
-                  <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-red-500"></div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-                  {relatedProducts.map((relatedProduct) => (
-                    <ProductCard key={relatedProduct.id} product={relatedProduct} />
-                  ))}
-                </div>
-              )}
+        <section className="py-8 sm:py-12">
+          <div className="space-y-6 sm:space-y-8">
+            <div className="text-center">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+                También te podría <span className="text-red-500">gustar</span>
+              </h2>
             </div>
-          </section>
-        )}
+
+            {loadingRelated ? (
+              <div className="flex justify-center items-center py-8 sm:py-12">
+                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-red-500"></div>
+                <span className="ml-2 text-gray-600">Cargando productos relacionados...</span>
+              </div>
+            ) : relatedProducts.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+                {relatedProducts.map((relatedProduct) => (
+                  <ProductCard key={relatedProduct.id} product={relatedProduct} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 sm:py-12">
+                <p className="text-gray-500">No se encontraron productos relacionados</p>
+              </div>
+            )}
+          </div>
+        </section>
       </main>
 
       {/* Image Zoom Modal */}
