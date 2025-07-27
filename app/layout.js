@@ -1,5 +1,6 @@
 import "./globals.css";
 import { QueryProvider } from '@/components/QueryProvider'
+import { WhatsAppFloat } from '@/components/WhatsAppFloat'
 
 export const metadata = {
   title: "ArgoStore - Moda que Define tu Estilo",
@@ -12,6 +13,7 @@ export default function RootLayout({ children }) {
       <body className="antialiased">
         <QueryProvider>
           {children}
+          <WhatsAppFloat />
         </QueryProvider>
       </body>
     </html>

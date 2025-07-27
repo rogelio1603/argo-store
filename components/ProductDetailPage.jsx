@@ -481,12 +481,12 @@ export function ProductDetailPage({ product, categories = [] }) {
             {/* Price */}
             <div className="flex items-center space-x-2 sm:space-x-3">
               <span className="text-2xl sm:text-3xl font-bold text-gray-900">
-                ${product.price}
+                ${product.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               {product.originalPrice && product.originalPrice > product.price && (
                 <>
                   <span className="text-lg sm:text-xl text-gray-500 line-through">
-                    ${product.originalPrice}
+                    ${product.originalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                   <span className="text-base sm:text-lg text-red-500 font-semibold">
                     -{product.discount}%
