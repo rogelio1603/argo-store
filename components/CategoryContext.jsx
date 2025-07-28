@@ -1,7 +1,7 @@
 "use client"
 
-import React, { createContext, useContext, useState } from 'react'
-import { getCategoryConfig, getSubcategories, getSubcategoryBySlug } from '@/lib/categories'
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import { getCategoryConfig, getSubcategories, getSubcategoryBySlug, initializeCategoriesConfig } from '@/lib/categories'
 
 const CategoryContext = createContext()
 
@@ -16,6 +16,22 @@ export const useCategory = () => {
 export const CategoryProvider = ({ children, initialCategory = 'all', initialSubcategory = null }) => {
   const [selectedCategory, setSelectedCategory] = useState(initialCategory)
   const [selectedSubcategory, setSelectedSubcategory] = useState(initialSubcategory)
+  const [isConfigLoaded, setIsConfigLoaded] = useState(false)
+
+  // Initialize dynamic categories config
+  useEffect(() => {
+    const loadCategoriesConfig = async () => {
+      try {
+        await initializeCategoriesConfig()
+        setIsConfigLoaded(true)
+      } catch (error) {
+        console.error('Error loading dynamic categories config:', error)
+        setIsConfigLoaded(true) // Still set to true to avoid infinite loading
+      }
+    }
+
+    loadCategoriesConfig()
+  }, [])
 
   const updateCategory = (category, subcategory = null) => {
     setSelectedCategory(category)
@@ -51,7 +67,8 @@ export const CategoryProvider = ({ children, initialCategory = 'all', initialSub
     selectedSubcategory,
     updateCategory,
     getCurrentConfig,
-    getSubcategoriesList
+    getSubcategoriesList,
+    isConfigLoaded
   }
 
   return (

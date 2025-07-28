@@ -107,12 +107,12 @@ export function ProductCard({ product }) {
         {/* Price */}
         <div className="flex items-center space-x-1 sm:space-x-2 flex-grow">
           <span className="text-lg sm:text-xl font-bold text-gray-900">
-            ${price}
+            ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
           {originalPrice && originalPrice > price && (
             <>
               <span className="text-xs sm:text-sm text-gray-500 line-through">
-                ${originalPrice}
+                ${originalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               <span className="text-xs sm:text-sm text-red-500 font-semibold">
                 -{discount}%
