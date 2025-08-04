@@ -27,6 +27,17 @@ export async function POST(request) {
           paymentId 
         })
       }
+
+      // Get payment details from MercadoPago
+      const payment = new Payment(client)
+      const paymentInfo = await payment.get({ id: paymentId })
+      
+      // Process approved payments
+      if (paymentInfo.status === 'approved') {
+        const result = await PaymentProcessor.processApprovedPayment(paymentInfo)
+      } else {
+        console.log(`⚠️ WEBHOOK: Payment ${paymentId} not approved, status: ${paymentInfo.status}`)
+      }
     } else {
       console.log(`Non-payment notification received: ${body.type}`)
     }

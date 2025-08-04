@@ -9,7 +9,10 @@ import useCartStore from '@/lib/cart-store'
 import { ShoppingCartIcon, CreditCardIcon, UserIcon, TruckIcon, ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 import { checkoutSchema } from '@/lib/checkout-schema'
-import { mexicanStates, getCitiesForState } from '@/lib/mexico-locations'
+import { mexicanStates } from '@/lib/mexico-locations'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -18,7 +21,6 @@ export default function CheckoutPage() {
   
   const [isLoading, setIsLoading] = useState(false)
   const [isHydrated, setIsHydrated] = useState(false)
-  const [availableCities, setAvailableCities] = useState([])
 
   // Initialize react-hook-form with Zod resolver
   const {
@@ -36,16 +38,20 @@ export default function CheckoutPage() {
       email: '',
       confirmEmail: '',
       phone: '',
-      address: '',
+      street: '',
+      exteriorNumber: '',
+      interiorNumber: '',
+      colonia: '',
       state: '',
       city: '',
-      postalCode: ''
+      alcaldia: '',
+      postalCode: '',
+      references: ''
     }
   })
 
-  // Watch state changes for dynamic city loading
+  // Watch state changes for conditional alcaldia field
   const watchedState = watch('state')
-  const watchedCity = watch('city')
 
   // Handle hydration
   useEffect(() => {
@@ -59,38 +65,55 @@ export default function CheckoutPage() {
     }
   }, [isHydrated, items.length, router])
 
-  // Update available cities when state changes
+  // Clear alcaldia when state changes and is not CDMX
   useEffect(() => {
-    if (watchedState) {
-      const cities = getCitiesForState(watchedState)
-      setAvailableCities(cities)
-      
-      // Clear city selection if current city is not available in new state
-      if (watchedCity && !cities.includes(watchedCity)) {
-        setValue('city', '')
-      }
-    } else {
-      setAvailableCities([])
+    if (watchedState && watchedState !== 'CDMX') {
+      setValue('alcaldia', '')
     }
-  }, [watchedState, watchedCity, setValue])
+  }, [watchedState, setValue])
 
   const onSubmit = async (data) => {
     setIsLoading(true)
 
     try {
+      // Convert all text fields to uppercase except email
+      const processedData = {
+        ...data,
+        firstName: data.firstName.toUpperCase(),
+        lastName: data.lastName.toUpperCase(),
+        motherLastName: data.motherLastName.toUpperCase(),
+        // email stays as is (lowercase/mixed case)
+        phone: data.phone,
+        street: data.street.toUpperCase(),
+        exteriorNumber: data.exteriorNumber.toUpperCase(),
+        interiorNumber: data.interiorNumber ? data.interiorNumber.toUpperCase() : '',
+        colonia: data.colonia.toUpperCase(),
+        city: data.city.toUpperCase(),
+        alcaldia: data.alcaldia ? data.alcaldia.toUpperCase() : '',
+        postalCode: data.postalCode, // Numbers don't need uppercase
+        references: data.references ? data.references.toUpperCase() : ''
+      }
+
+      // Build complete address string with uppercase values
+      const fullAddress = `${processedData.street} ${processedData.exteriorNumber}${processedData.interiorNumber ? ` INT. ${processedData.interiorNumber}` : ''}`
+      
       // Prepare payer data for MercadoPago
       const payer = {
-        name: data.firstName,
-        surname: `${data.lastName} ${data.motherLastName}`.trim(),
-        email: data.email,
+        name: processedData.firstName,
+        surname: `${processedData.lastName} ${processedData.motherLastName}`.trim(),
+        email: data.email, // Keep original email (no uppercase)
         phone: {
           area_code: '52', // Mexico area code
-          number: data.phone
+          number: processedData.phone
         },
         address: {
-          street_name: data.address,
-          street_number: '',
-          zip_code: data.postalCode
+          street_name: fullAddress,
+          colonia: processedData.colonia,
+          state: mexicanStates.find(s => s.id === data.state)?.name.toUpperCase() || processedData.state,
+          city: processedData.city,
+          alcaldia: processedData.alcaldia,
+          zip_code: processedData.postalCode,
+          references: processedData.references
         }
       }
 
@@ -113,16 +136,22 @@ export default function CheckoutPage() {
         throw new Error(result.details || result.error || 'Error creating payment preference')
       }
 
-      // Store order data in localStorage for later use
+      // Store order data in localStorage for later use (with uppercase values)
       localStorage.setItem('currentOrder', JSON.stringify({
         items,
         payer: {
           ...payer,
           fullAddress: {
-            address: data.address,
-            city: data.city,
-            state: mexicanStates.find(s => s.id === data.state)?.name || data.state,
-            postalCode: data.postalCode
+            street: processedData.street,
+            exteriorNumber: processedData.exteriorNumber,
+            interiorNumber: processedData.interiorNumber,
+            colonia: processedData.colonia,
+            city: processedData.city,
+            alcaldia: processedData.alcaldia,
+            state: mexicanStates.find(s => s.id === data.state)?.name.toUpperCase() || processedData.state,
+            postalCode: processedData.postalCode,
+            references: processedData.references,
+            completeAddress: fullAddress
           }
         },
         total: totalPrice,
@@ -173,7 +202,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <Link 
@@ -304,46 +333,112 @@ export default function CheckoutPage() {
               </div>
 
               {/* Shipping Address Information */}
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
                   <TruckIcon className="h-5 w-5 mr-2" />
                   Información de Dirección de Envío
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Primera fila: Calle y Números */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Dirección *
+                      Calle *
                     </label>
-                    <input
+                    <Input
                       type="text"
-                      {...register('address')}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent ${
-                        errors.address ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                      }`}
-                      placeholder="Calle Reforma #123, Col. Centro"
+                      {...register('street')}
+                      className={errors.street ? 'border-red-300 bg-red-50' : ''}
+                      placeholder="Calle Reforma"
                     />
-                    {errors.address && (
-                      <p className="mt-1 text-sm text-red-600">{errors.address.message}</p>
+                    {errors.street && (
+                      <p className="mt-1 text-sm text-red-600">{errors.street.message}</p>
                     )}
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Número Exterior *
+                    </label>
+                    <Input
+                      type="text"
+                      {...register('exteriorNumber')}
+                      className={errors.exteriorNumber ? 'border-red-300 bg-red-50' : ''}
+                      placeholder="123"
+                    />
+                    {errors.exteriorNumber && (
+                      <p className="mt-1 text-sm text-red-600">{errors.exteriorNumber.message}</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Número Interior
+                    </label>
+                    <Input
+                      type="text"
+                      {...register('interiorNumber')}
+                      className={errors.interiorNumber ? 'border-red-300 bg-red-50' : ''}
+                      placeholder="4A"
+                    />
+                    {errors.interiorNumber && (
+                      <p className="mt-1 text-sm text-red-600">{errors.interiorNumber.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Segunda fila: Colonia y CP */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Colonia *
+                    </label>
+                    <Input
+                      type="text"
+                      {...register('colonia')}
+                      className={errors.colonia ? 'border-red-300 bg-red-50' : ''}
+                      placeholder="Centro"
+                    />
+                    {errors.colonia && (
+                      <p className="mt-1 text-sm text-red-600">{errors.colonia.message}</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Código Postal *
+                    </label>
+                    <Input
+                      type="text"
+                      {...register('postalCode')}
+                      className={errors.postalCode ? 'border-red-300 bg-red-50' : ''}
+                      placeholder="06600"
+                      maxLength="5"
+                    />
+                    {errors.postalCode && (
+                      <p className="mt-1 text-sm text-red-600">{errors.postalCode.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tercera fila: Estado, Ciudad y Alcaldía (condicional) */}
+                <div className={`grid grid-cols-1 gap-4 ${watchedState === 'CDMX' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Estado *
                     </label>
-                    <select
-                      {...register('state')}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent ${
-                        errors.state ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Selecciona un estado</option>
-                      {mexicanStates.map((state) => (
-                        <option key={state.id} value={state.id}>
-                          {state.name}
-                        </option>
-                      ))}
-                    </select>
+                    <Select onValueChange={(value) => setValue('state', value)} value={watchedState}>
+                      <SelectTrigger className={errors.state ? 'border-red-300 bg-red-50' : ''}>
+                        <SelectValue placeholder="Selecciona un estado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {mexicanStates.map((state) => (
+                          <SelectItem key={state.id} value={state.id}>
+                            {state.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     {errors.state && (
                       <p className="mt-1 text-sm text-red-600">{errors.state.message}</p>
                     )}
@@ -353,44 +448,49 @@ export default function CheckoutPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Ciudad *
                     </label>
-                    <select
+                    <Input
+                      type="text"
                       {...register('city')}
-                      disabled={!watchedState || availableCities.length === 0}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed ${
-                        errors.city ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">
-                        {!watchedState ? 'Primero selecciona un estado' : 'Selecciona una ciudad'}
-                      </option>
-                      {availableCities.map((city) => (
-                        <option key={city} value={city}>
-                          {city}
-                        </option>
-                      ))}
-                    </select>
+                      className={errors.city ? 'border-red-300 bg-red-50' : ''}
+                      placeholder="Ciudad de México"
+                    />
                     {errors.city && (
                       <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
                     )}
                   </div>
                   
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Código Postal *
-                    </label>
-                    <input
-                      type="text"
-                      {...register('postalCode')}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent ${
-                        errors.postalCode ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                      }`}
-                      placeholder="06600"
-                      maxLength="5"
-                    />
-                    {errors.postalCode && (
-                      <p className="mt-1 text-sm text-red-600">{errors.postalCode.message}</p>
-                    )}
-                  </div>
+                  {watchedState === 'CDMX' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Alcaldía
+                      </label>
+                      <Input
+                        type="text"
+                        {...register('alcaldia')}
+                        className={errors.alcaldia ? 'border-red-300 bg-red-50' : ''}
+                        placeholder="Cuauhtémoc"
+                      />
+                      {errors.alcaldia && (
+                        <p className="mt-1 text-sm text-red-600">{errors.alcaldia.message}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Cuarta fila: Referencias */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Referencias del Domicilio <span className="text-gray-500">(opcional)</span>
+                  </label>
+                  <Textarea
+                    {...register('references')}
+                    className={errors.references ? 'border-red-300 bg-red-50' : ''}
+                    placeholder="Entre calle X y Y, edificio azul, portón negro..."
+                    rows={3}
+                  />
+                  {errors.references && (
+                    <p className="mt-1 text-sm text-red-600">{errors.references.message}</p>
+                  )}
                 </div>
               </div>
 

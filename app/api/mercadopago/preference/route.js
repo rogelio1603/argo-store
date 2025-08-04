@@ -52,6 +52,9 @@ export async function POST(request) {
       pending: `${validBaseUrl}/payment/pending`
     }
     
+    // Force automatic redirect to success page
+    preferenceData.auto_return = 'approved'
+    
     // Always add notification URL for webhooks
     preferenceData.notification_url = `${validBaseUrl}/api/mercadopago/webhook`
 
@@ -67,8 +70,38 @@ export async function POST(request) {
         },
         address: {
           street_name: payer.address?.street_name || '',
+          colonia: payer.address?.colonia || '',
+          state: payer.address?.state || '',
+          city: payer.address?.city || '',
           zip_code: payer.address?.zip_code || ''
         }
+      }
+      
+      // Add complete address info in additional_info for later retrieval
+      if (!preferenceData.additional_info) {
+        preferenceData.additional_info = {}
+      }
+      
+      // Store complete address info in metadata for reliable retrieval
+      preferenceData.metadata = {
+        // Payer information
+        payer_first_name: payer.name || '',
+        payer_last_name: payer.surname || '',
+        payer_email: payer.email || '',
+        payer_phone: payer.phone?.number || '',
+        
+        // Complete address information
+        address_street: payer.address?.street_name || '',
+        address_colonia: payer.address?.colonia || '',
+        address_state: payer.address?.state || '',
+        address_city: payer.address?.city || '',
+        address_alcaldia: payer.address?.alcaldia || '',
+        address_zip_code: payer.address?.zip_code || '',
+        address_references: payer.address?.references || '',
+        
+        // Items information (for backup)
+        items_count: items.length,
+        total_amount: mercadoPagoItems.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0)
       }
     }
 
