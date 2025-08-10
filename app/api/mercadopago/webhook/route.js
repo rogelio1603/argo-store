@@ -36,9 +36,9 @@ export async function POST(request) {
       const payment = new Payment(client)
       const paymentInfo = await payment.get({ id: paymentId })
       
-      // Process approved payments
+      // Process approved payments (webhook should not resend emails if already sent)
       if (paymentInfo.status === 'approved') {
-        const result = await processApprovedPayment(paymentInfo)
+        const result = await processApprovedPayment(paymentInfo, { sendEmail: true })
       } else {
         console.log(`⚠️ WEBHOOK: Payment ${paymentId} not approved, status: ${paymentInfo.status}`)
       }

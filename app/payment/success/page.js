@@ -47,6 +47,49 @@ export default function PaymentSuccessPage() {
           
           // Set validation result to control UI
           setPaymentValidation(result)
+
+          // If API returns order details, use them to render items and shipping
+          if (result?.order) {
+            const apiItems = (result.order.items || []).map((it) => ({
+              id: it.id,
+              name: it.title,
+              image: it.picture_url,
+              quantity: Number(it.quantity) || 0,
+              price: Number(it.unit_price) || 0
+            }))
+            const addr = result.order.shippingAddress || {}
+            const builtOrder = {
+              items: apiItems,
+              total: Number(result.order?.totals?.total) || apiItems.reduce((s, it) => s + (it.price * it.quantity), 0),
+              payer: {
+                fullAddress: {
+                  street: addr.street || '',
+                  exteriorNumber: '',
+                  interiorNumber: '',
+                  colonia: addr.colonia || '',
+                  city: addr.city || '',
+                  alcaldia: addr.alcaldia || '',
+                  state: addr.state || '',
+                  postalCode: addr.postalCode || '',
+                  references: addr.references || ''
+                }
+              },
+              paymentInfo: {
+                collection_id,
+                collection_status,
+                payment_id,
+                status,
+                external_reference,
+                payment_type,
+                merchant_order_id,
+                preference_id,
+                site_id,
+                processing_mode,
+                merchant_account_id
+              }
+            }
+            setOrderData(builtOrder)
+          }
           
         } catch (error) {
           console.error('❌ Error in automatic payment processing:', error)
@@ -231,13 +274,46 @@ export default function PaymentSuccessPage() {
                               Cantidad: {item.quantity}
                             </p>
                           </div>
-                                                     <div className="text-sm font-medium text-gray-900">
-                             ${(item.price * item.quantity).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                           </div>
+                          <div className="text-sm font-medium text-gray-900">
+                            ${(item.price * item.quantity).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
+
+                  {/* Shipping Address */}
+                  {orderData?.payer?.fullAddress && (
+                    <div className="mt-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-3">Dirección de Envío</h3>
+                      <div className="bg-white rounded-md p-4 text-sm text-gray-800 space-y-1">
+                        <p>
+                          <span className="font-semibold">Dirección:</span> {orderData.payer.fullAddress.street} {orderData.payer.fullAddress.exteriorNumber}
+                          {orderData.payer.fullAddress.interiorNumber ? `, Int. ${orderData.payer.fullAddress.interiorNumber}` : ''}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Colonia:</span> {orderData.payer.fullAddress.colonia}
+                        </p>
+                        {orderData.payer.fullAddress.alcaldia && (
+                          <p>
+                            <span className="font-semibold">Alcaldía:</span> {orderData.payer.fullAddress.alcaldia}
+                          </p>
+                        )}
+                        <p>
+                          <span className="font-semibold">Ciudad / Estado:</span> {orderData.payer.fullAddress.city}
+                          {orderData.payer.fullAddress.state ? `, ${orderData.payer.fullAddress.state}` : ''}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Código Postal:</span> {orderData.payer.fullAddress.postalCode}
+                        </p>
+                        {orderData.payer.fullAddress.references && (
+                          <p>
+                            <span className="font-semibold">Referencias:</span> {orderData.payer.fullAddress.references}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

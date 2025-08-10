@@ -6,13 +6,15 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import useCartStore from '@/lib/cart-store'
-import { ShoppingCartIcon, CreditCardIcon, UserIcon, TruckIcon, ArrowLeftIcon } from 'lucide-react'
+import { ShoppingCartIcon, CreditCardIcon, UserIcon, TruckIcon, ArrowLeftIcon, AlertTriangle, Loader2, X } from 'lucide-react'
 import Link from 'next/link'
 import { checkoutSchema } from '@/lib/checkout-schema'
 import { mexicanStates } from '@/lib/mexico-locations'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -21,6 +23,7 @@ export default function CheckoutPage() {
   
   const [isLoading, setIsLoading] = useState(false)
   const [isHydrated, setIsHydrated] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   // Initialize react-hook-form with Zod resolver
   const {
@@ -28,6 +31,7 @@ export default function CheckoutPage() {
     handleSubmit,
     watch,
     setValue,
+    trigger,
     formState: { errors }
   } = useForm({
     resolver: zodResolver(checkoutSchema),
@@ -214,12 +218,37 @@ export default function CheckoutPage() {
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
           <p className="text-gray-600 mt-2">Completa tu información para proceder con el pago</p>
+          {/* Disclaimer visible para el flujo de pago */}
+          <div className="mt-4 rounded-md border border-yellow-300 bg-yellow-50 p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-yellow-700 mt-0.5 flex-shrink-0" />
+              <p className="text-sm leading-6 text-yellow-900">
+                <span className="font-semibold">Importante:</span> cuando <span className="font-semibold">Mercado Pago</span> termine de procesar tu pago,
+                permanece en la pantalla y no cierres ni recargues la ventana, ni pulses ningún botón. Te redirigiremos
+                <span className="font-semibold"> automáticamente</span> y en ese momento generaremos y enviaremos el
+                <span className="font-semibold"> correo de confirmación de tu compra</span>.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column - Form */}
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                // Validate form; if invalid, close dialog (if open) and focus user on errors
+                const valid = await trigger()
+                if (!valid) {
+                  setConfirmOpen(false)
+                  toast.error('Por favor completa los campos requeridos antes de continuar.')
+                  return
+                }
+                setConfirmOpen(true)
+              }}
+              className="space-y-6"
+            >
               {/* Personal Information */}
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
@@ -427,7 +456,15 @@ export default function CheckoutPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Estado *
                     </label>
-                    <Select onValueChange={(value) => setValue('state', value)} value={watchedState}>
+                    {/* Hidden input to register field with RHF */}
+                    <input type="hidden" {...register('state')} />
+                    <Select
+                      onValueChange={(value) => {
+                        setValue('state', value, { shouldDirty: true, shouldTouch: true, shouldValidate: true })
+                        trigger('state')
+                      }}
+                      value={watchedState}
+                    >
                       <SelectTrigger className={errors.state ? 'border-red-300 bg-red-50' : ''}>
                         <SelectValue placeholder="Selecciona un estado" />
                       </SelectTrigger>
@@ -494,55 +531,26 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Test Button - Remove in production */}
-              {process.env.NODE_ENV === 'development' && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const response = await fetch('/api/mercadopago/test-simple', {
-                        method: 'POST'
-                      })
-                      const data = await response.json()
-                      if (data.success) {
-                        toast.success('Prueba exitosa!', {
-                          description: 'MercadoPago está funcionando correctamente'
-                        })
-                      } else {
-                        toast.error('Prueba falló', {
-                          description: data.error
-                        })
-                      }
-                    } catch (error) {
-                      toast.error('Error en prueba', {
-                        description: error.message
-                      })
-                    }
-                  }}
-                  className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors duration-200 font-medium flex items-center justify-center mb-4"
-                >
-                  🧪 Probar Conexión MercadoPago (Dev)
-                </button>
-              )}
+              {/* Botón de prueba eliminado para producción */}
 
               {/* Submit Button */}
-              <button
+              <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-red-500 text-white py-3 px-4 rounded-md hover:bg-red-600 transition-colors duration-200 font-medium flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full cursor-pointer bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-md transition-colors duration-200 font-medium flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Procesando...
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Redirigiendo a Mercado Pago...
                   </>
                 ) : (
                   <>
                     <CreditCardIcon className="h-5 w-5 mr-2" />
-                    Pagar con MercadoPago
+                    Pagar con Mercado Pago
                   </>
                 )}
-              </button>
+              </Button>
             </form>
           </div>
 
@@ -617,6 +625,49 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
+
+        {/* Confirmation Dialog */}
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>¿Listo para continuar con el pago?</DialogTitle>
+              <DialogDescription>
+                Al continuar te redirigiremos a Mercado Pago. Por favor, una vez completado el pago, permanece en la pantalla; te redirigiremos automáticamente para confirmar tu compra y enviar el correo de confirmación.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-2 justify-end">
+              <DialogClose asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="cursor-pointer"
+                  onClick={() => setConfirmOpen(false)}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancelar
+                </Button>
+              </DialogClose>
+              <Button
+                type="button"
+                className="cursor-pointer bg-red-600 hover:bg-red-700 text-white"
+                disabled={isLoading}
+                onClick={handleSubmit(onSubmit)}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <CreditCardIcon className="h-4 w-4 mr-2" />
+                    Continuar a Mercado Pago
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
