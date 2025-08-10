@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { PaymentProcessor } from '@/lib/payment-processor'
+import { clearProcessedPayments } from '@/lib/payment-processor'
 
 export async function POST(request) {
   try {
@@ -13,7 +13,7 @@ export async function POST(request) {
       )
     }
 
-    PaymentProcessor.clearProcessedPayments()
+    clearProcessedPayments()
     
     return NextResponse.json({
       success: true,

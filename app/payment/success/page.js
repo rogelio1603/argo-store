@@ -13,6 +13,8 @@ export default function PaymentSuccessPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [paymentValidation, setPaymentValidation] = useState(null)
   const [isValidating, setIsValidating] = useState(true)
+  const [countdown, setCountdown] = useState(3)
+  const [showCountdown, setShowCountdown] = useState(false)
 
   useEffect(() => {
     // Get payment parameters from URL
@@ -96,17 +98,40 @@ export default function PaymentSuccessPage() {
   // Separate effect to handle cart clearing based on payment validation
   useEffect(() => {
     if (paymentValidation && !isValidating) {
-      // Only clear cart if payment was real and successful (not test payments)
-      if (paymentValidation?.success === true && 
-          paymentValidation?.processing_result?.success === true &&
-          !paymentValidation?.processing_result?.testPayment) {
+      // Clear cart for successful payments (including duplicates and already sent emails)
+      if (paymentValidation?.success === true) {
         clearCart()
         localStorage.removeItem('currentOrder')
+        console.log('✅ Cart cleared - Payment validated successfully')
       } else {
-        console.error('🛡️ Cart NOT cleared - Payment not validated as real and successful')
+        console.error('🛡️ Cart NOT cleared - Payment not validated as successful')
       }
     }
   }, [paymentValidation, isValidating, clearCart])
+
+  // Countdown effect for redirect
+  useEffect(() => {
+    if (paymentValidation && !isValidating) {
+      // Start countdown for duplicate payments or already sent emails
+      if (paymentValidation?.processing_result?.duplicate || 
+          paymentValidation?.processing_result?.emailAlreadySent) {
+        setShowCountdown(true)
+        
+        const timer = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev <= 1) {
+              clearInterval(timer)
+              window.location.href = '/'
+              return 0
+            }
+            return prev - 1
+          })
+        }, 1000)
+
+        return () => clearInterval(timer)
+      }
+    }
+  }, [paymentValidation, isValidating])
 
   if (isLoading || isValidating) {
     return (
@@ -135,6 +160,7 @@ export default function PaymentSuccessPage() {
   
   const isTestPayment = serverValidation?.testPayment === true
   const isDuplicatePayment = serverValidation?.duplicate === true
+  const isEmailAlreadySent = serverValidation?.emailAlreadySent === true
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -219,10 +245,9 @@ export default function PaymentSuccessPage() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
                 <p className="text-sm text-blue-800">
                   <strong>¿Qué sigue?</strong><br/>
-                  • Recibirás un email de confirmación<br/>
                   • Prepararemos tu pedido<br/>
                   • Te notificaremos cuando esté listo para envío<br/>
-                  • Puedes contactarnos si tienes alguna pregunta
+                  • Puedes contactarnos si tienes alguna pregunta via whatsapp o email
                 </p>
               </div>
             </>
@@ -267,9 +292,44 @@ export default function PaymentSuccessPage() {
               <h1 className="text-3xl font-bold text-blue-700 mb-4">
                 🔄 Pago Ya Procesado
               </h1>
-              <p className="text-lg text-gray-600 mb-8">
+              <p className="text-lg text-gray-600 mb-4">
                 Este pago ya fue procesado anteriormente. No se duplicará la orden.
               </p>
+
+              {showCountdown && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
+                  <p className="text-sm text-blue-800 text-center">
+                    <strong>Redirigiendo al inicio en {countdown} segundos...</strong>
+                  </p>
+                </div>
+              )}
+
+              <div className="bg-gray-50 rounded-lg p-4 mb-8">
+                <p className="text-sm text-gray-600">ID de Pago</p>
+                <p className="font-medium">{searchParams.get('payment_id')}</p>
+              </div>
+            </>
+          ) : isEmailAlreadySent ? (
+            <>
+              {/* Email Already Sent */}
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+                <ShoppingBagIcon className="h-10 w-10 text-green-600" />
+              </div>
+
+              <h1 className="text-3xl font-bold text-green-700 mb-4">
+                📧 Email Ya Enviado
+              </h1>
+              <p className="text-lg text-gray-600 mb-4">
+                El email de confirmación ya fue enviado para este pago.
+              </p>
+
+              {showCountdown && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
+                  <p className="text-sm text-green-800 text-center">
+                    <strong>Redirigiendo al inicio en {countdown} segundos...</strong>
+                  </p>
+                </div>
+              )}
 
               <div className="bg-gray-50 rounded-lg p-4 mb-8">
                 <p className="text-sm text-gray-600">ID de Pago</p>

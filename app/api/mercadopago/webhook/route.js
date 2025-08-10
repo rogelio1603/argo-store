@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { MercadoPagoConfig, Payment } from 'mercadopago'
-import { PaymentProcessor } from '@/lib/payment-processor'
+import { 
+  processApprovedPayment, 
+  isPaymentAlreadyProcessed, 
+  getProcessingStats 
+} from '@/lib/payment-processor'
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
@@ -20,7 +24,7 @@ export async function POST(request) {
       }
 
       // Check if payment already processed to avoid duplicate processing
-      if (PaymentProcessor.isPaymentAlreadyProcessed(paymentId.toString())) {
+      if (isPaymentAlreadyProcessed(paymentId.toString())) {
         return NextResponse.json({ 
           received: true, 
           status: 'already_processed',
@@ -34,7 +38,7 @@ export async function POST(request) {
       
       // Process approved payments
       if (paymentInfo.status === 'approved') {
-        const result = await PaymentProcessor.processApprovedPayment(paymentInfo)
+        const result = await processApprovedPayment(paymentInfo)
       } else {
         console.log(`⚠️ WEBHOOK: Payment ${paymentId} not approved, status: ${paymentInfo.status}`)
       }
@@ -67,6 +71,6 @@ export async function GET() {
   return NextResponse.json({ 
     status: 'webhook endpoint active',
     timestamp: new Date().toISOString(),
-    stats: PaymentProcessor.getProcessingStats()
+    stats: getProcessingStats()
   })
 } 

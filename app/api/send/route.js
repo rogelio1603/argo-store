@@ -1,12 +1,12 @@
-import { PaymentProcessor } from '@/lib/payment-processor';
+import { sendConfirmationEmail } from '@/lib/payment-processor';
 
 export async function POST(request) {
   try {
     const body = await request.json();
     const { to, firstName, paymentId, amount, currency } = body;
 
-    // Use the PaymentProcessor method for consistency
-    const result = await PaymentProcessor.sendConfirmationEmail({
+    // Use the sendConfirmationEmail function for consistency
+    const result = await sendConfirmationEmail({
       to,
       firstName,
       paymentId,

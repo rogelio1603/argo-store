@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { MercadoPagoConfig, Payment } from 'mercadopago'
-import { PaymentProcessor } from '@/lib/payment-processor'
+import { processApprovedPayment } from '@/lib/payment-processor'
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
@@ -20,7 +20,7 @@ export async function POST(request) {
 
     // Process the payment automatically (same logic as webhook)
     if (paymentInfo.status === 'approved') {
-      const processingResult = await PaymentProcessor.processApprovedPayment(paymentInfo)
+      const processingResult = await processApprovedPayment(paymentInfo)
       
       if (processingResult.success) {
         console.log('🎉 AUTOMATIC PROCESSING SUCCESSFUL:', processingResult)
