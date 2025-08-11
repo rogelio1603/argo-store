@@ -145,7 +145,6 @@ export default function PaymentSuccessPage() {
       if (paymentValidation?.success === true) {
         clearCart()
         localStorage.removeItem('currentOrder')
-        console.log('✅ Cart cleared - Payment validated successfully')
       } else {
         console.error('🛡️ Cart NOT cleared - Payment not validated as successful')
       }

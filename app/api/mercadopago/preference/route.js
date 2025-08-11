@@ -105,6 +105,19 @@ export async function POST(request) {
       }
     }
 
+    // Ensure metadata exists and include cart items so we can reconstruct order later
+    preferenceData.metadata = {
+      ...(preferenceData.metadata || {}),
+      cart_items: items.map((it) => ({
+        id: it.productId,
+        title: it.name,
+        size: it.size || '',
+        quantity: it.quantity,
+        unit_price: parseFloat(it.price),
+        picture_url: it.image
+      }))
+    }
+
     const preference = new Preference(client)
     const result = await preference.create({ body: preferenceData })
 
