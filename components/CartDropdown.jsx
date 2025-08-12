@@ -60,7 +60,7 @@ const CartItem = React.memo(({ item, updateQuantity, removeItem, isMobile = fals
             {item.size && <p>Talla: {item.size}</p>}
           </div>
           <p className="text-lg font-semibold text-gray-900">
-            ${item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ${item.price.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
           
           {/* Quantity Controls for Mobile */}
@@ -138,7 +138,7 @@ const CartItem = React.memo(({ item, updateQuantity, removeItem, isMobile = fals
           {item.size && <p>Talla: {item.size}</p>}
         </div>
         <p className="text-sm font-medium text-gray-900">
-          ${item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          ${item.price.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
       </div>
 
@@ -277,7 +277,7 @@ export function CartDropdown() {
           <div className="flex justify-between items-center mb-3">
             <span className="text-sm font-medium text-gray-900">Total:</span>
             <span className="text-lg font-bold text-red-600">
-              ${totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${totalPrice.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
 
@@ -376,7 +376,7 @@ export function CartDropdown() {
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-medium text-gray-900">Total:</span>
                     <span className="text-2xl font-bold text-red-600">
-                      ${totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ${totalPrice.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
 
