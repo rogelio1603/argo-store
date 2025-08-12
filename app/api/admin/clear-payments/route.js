@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
-import { clearProcessedPayments } from '@/lib/payment-processor'
+
+// Ensure this route is never statically analyzed or prerendered
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 export async function POST(request) {
   try {
@@ -13,6 +16,8 @@ export async function POST(request) {
       )
     }
 
+    // Import only when needed to avoid bundling/initializing heavy code during build
+    const { clearProcessedPayments } = await import('@/lib/payment-processor')
     clearProcessedPayments()
     
     return NextResponse.json({
