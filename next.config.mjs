@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   // Configuración para imágenes
   images: {
     remotePatterns: [
@@ -13,7 +14,17 @@ const nextConfig = {
         protocol: 'https',
         hostname: '*.strapi.io',
         pathname: '/**',
-      }
+      },
+      {
+        protocol: 'https',
+        hostname: '*.traefik.me',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '*.traefik.me',
+        pathname: '/uploads/**',
+      },
     ],
   }
 };

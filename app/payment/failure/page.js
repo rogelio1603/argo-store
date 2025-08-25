@@ -5,7 +5,15 @@ import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { XCircleIcon, ArrowLeftIcon, CreditCardIcon, RefreshCcwIcon } from 'lucide-react'
 
-function PaymentFailureContent() {
+export default function PaymentFailurePage() {
+  return (
+    <Suspense fallback={null}>
+      <PaymentFailurePageInner />
+    </Suspense>
+  )
+}
+
+function PaymentFailurePageInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [paymentInfo, setPaymentInfo] = useState(null)
@@ -215,21 +223,4 @@ function PaymentFailureContent() {
       </div>
     </div>
   )
-}
-
-export default function PaymentFailurePage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Cargando...</p>
-          </div>
-        </div>
-      }
-    >
-      <PaymentFailureContent />
-    </Suspense>
-  )
-}
+} 
