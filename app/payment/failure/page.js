@@ -1,11 +1,19 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { XCircleIcon, ArrowLeftIcon, CreditCardIcon, RefreshCcwIcon } from 'lucide-react'
 
 export default function PaymentFailurePage() {
+  return (
+    <Suspense fallback={null}>
+      <PaymentFailurePageInner />
+    </Suspense>
+  )
+}
+
+function PaymentFailurePageInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [paymentInfo, setPaymentInfo] = useState(null)

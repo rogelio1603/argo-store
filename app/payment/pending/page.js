@@ -1,11 +1,19 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { ClockIcon, InfoIcon, HomeIcon, ShoppingBagIcon } from 'lucide-react'
 
 export default function PaymentPendingPage() {
+  return (
+    <Suspense fallback={null}>
+      <PaymentPendingPageInner />
+    </Suspense>
+  )
+}
+
+function PaymentPendingPageInner() {
   const searchParams = useSearchParams()
   const [paymentInfo, setPaymentInfo] = useState(null)
   const [orderData, setOrderData] = useState(null)
