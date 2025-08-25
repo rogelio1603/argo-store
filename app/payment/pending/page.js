@@ -1,11 +1,11 @@
 "use client"
 
-import React, { useEffect, useState, Suspense } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { ClockIcon, InfoIcon, HomeIcon, ShoppingBagIcon } from 'lucide-react'
 
-function PaymentPendingContent() {
+export default function PaymentPendingPage() {
   const searchParams = useSearchParams()
   const [paymentInfo, setPaymentInfo] = useState(null)
   const [orderData, setOrderData] = useState(null)
@@ -246,21 +246,4 @@ function PaymentPendingContent() {
       </div>
     </div>
   )
-}
-
-export default function PaymentPendingPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Cargando...</p>
-          </div>
-        </div>
-      }
-    >
-      <PaymentPendingContent />
-    </Suspense>
-  )
-}
+} 
